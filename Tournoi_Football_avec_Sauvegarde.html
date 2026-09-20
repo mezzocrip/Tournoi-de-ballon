@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-950 text-slate-100 select-none">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>Gestionnaire de Tournoi de Football - Manuel avec Compteur</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel (.xlsx / .csv) parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        pitch: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        accent: {
+                            50: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        input, textarea {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(34, 197, 94, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 197, 94, 0.8);
+        }
+
+        .touch-btn {
+            min-height: 48px;
+            min-width: 48px;
+        }
+        .touch-btn-sm {
+            min-height: 40px;
+            min-width: 40px;
+        }
+    </style>
+</head>
+<body class="font-sans min-h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden pb-12">
+
+    <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-xl">
+        <div class="max-w-[1600px] mx-auto px-6 py-4 flex flex-col xl:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-pitch-600 flex items-center justify-center text-white shadow-lg shadow-pitch-600/30">
+                    <i class="fa-solid fa-futbol text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-3">
+                        Tournoi Foot <span class="text-xs font-semibold px-2.5 py-1 bg-pitch-600/20 text-pitch-400 border border-pitch-500/30 rounded-lg">Sélection Manuel</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium flex items-center gap-2">
+                        <span>Gestionnaire Scolaire</span> &bull; 
+                        <span id="save-status-badge" class="text-emerald-400 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-floppy-disk"></i> Sauvegarde locale active
+                        </span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center justify-center gap-3">
+                <div class="flex items-center gap-2 bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
+                    <i class="fa-solid fa-users text-pitch-500 text-sm"></i>
+                    <span class="text-xs text-slate-400 font-medium">Élèves:</span>
+                    <span id="total-players-count" class="text-sm font-bold text-white">0</span>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
+                    <i class="fa-solid fa-user-clock text-amber-400 text-sm"></i>
+                    <span class="text-xs text-slate-400 font-medium">Réserve:</span>
+                    <span id="unassigned-players-count" class="text-sm font-bold text-amber-400">0</span>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
+                    <i class="fa-solid fa-shield-halved text-blue-400 text-sm"></i>
+                    <span class="text-xs text-slate-400 font-medium">Équipes:</span>
+                    <span id="total-teams-count" class="text-sm font-bold text-blue-400">0</span>
+                </div>
+
+                <div class="h-6 w-px bg-slate-800 hidden md:block"></div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="exporterSauvegardeJSON()" title="Exporter toutes les données" class="touch-btn-sm bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-200 text-xs font-bold px-3.5 rounded-xl border border-slate-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-download text-pitch-400"></i>
+                        <span class="hidden sm:inline">Exporter JSON</span>
+                    </button>
+                    
+                    <label title="Importer un fichier JSON sauvegardé" class="touch-btn-sm bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-200 text-xs font-bold px-3.5 rounded-xl border border-slate-700 transition flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-upload text-amber-400"></i>
+                        <span class="hidden sm:inline">Importer JSON</span>
+                        <input type="file" id="jsonImportFile" accept=".json" class="hidden" onchange="importerSauvegardeJSON(event)">
+                    </label>
+
+                    <button onclick="demanderResetComplet()" title="Réinitialiser toutes les données" class="touch-btn-sm bg-red-950/60 hover:bg-red-900 text-red-300 text-xs font-bold px-3 rounded-xl border border-red-800/60 transition flex items-center justify-center">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-[1600px] w-full mx-auto px-6 py-6 space-y-8">
+
+        <!-- Étape 1 : Réserve Élèves -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+            <div class="flex items-center gap-2 text-pitch-500 font-bold text-xs uppercase tracking-wider mb-2">
+                <span class="w-7 h-7 rounded-lg bg-pitch-500/10 flex items-center justify-center text-sm font-extrabold border border-pitch-500/20">1</span>
+                Étape 1 &bull; Réserve Élèves
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-1">Importation Excel / CSV</h2>
+            <p class="text-slate-400 text-sm mb-6">
+                Chargez la liste des élèves. Les noms sont insérés dans la réserve globale sans affectation automatique.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <label for="excelFile" class="md:col-span-2 touch-btn flex items-center justify-center gap-3 px-6 py-4 rounded-xl border-2 border-dashed border-slate-700 bg-slate-950/60 hover:bg-slate-800 hover:border-pitch-500 transition cursor-pointer text-slate-300">
+                    <i class="fa-solid fa-file-excel text-2xl text-pitch-500"></i>
+                    <span id="file-label-text" class="text-sm font-semibold truncate">Choisir un fichier Excel (.xlsx) ou CSV</span>
+                    <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect(event)" />
+                </label>
+
+                <button onclick="importerExcel()" class="touch-btn bg-pitch-600 hover:bg-pitch-500 active:bg-pitch-700 text-white font-bold px-8 rounded-xl shadow-lg shadow-pitch-600/30 transition flex items-center justify-center gap-3 text-base">
+                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                    <span>Importer les noms</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Étape 2 : Sélection Manuelle des Équipes -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+                <div>
+                    <div class="flex items-center gap-2 text-accent-500 font-bold text-xs uppercase tracking-wider mb-2">
+                        <span class="w-7 h-7 rounded-lg bg-accent-500/10 flex items-center justify-center text-sm font-extrabold border border-accent-500/20">2</span>
+                        Étape 2 &bull; Session de Jeu
+                    </div>
+                    <h2 class="text-2xl font-bold text-white">Sélection des Équipes pour le Match</h2>
+                    <p class="text-slate-400 text-sm">Cochez les équipes qui doivent jouer. Un compteur enregistre le nombre de matchs joués par chaque équipe.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <button onclick="validerSelectionMatch()" class="touch-btn bg-gradient-to-r from-pitch-600 to-pitch-500 hover:from-pitch-500 hover:to-pitch-600 active:scale-[0.98] text-white font-bold px-6 rounded-xl shadow-xl shadow-pitch-600/30 transition flex items-center gap-3">
+                        <i class="fa-solid fa-check-double text-xl"></i>
+                        <span class="text-base">Valider & Faire Jouer les Sélectionnées</span>
+                    </button>
+
+                    <!-- NOUVEAU BOUTON : Réinitialiser le terrain -->
+                    <button onclick="reinitialiserEquipesTerrain()" class="touch-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-300 font-semibold px-4 rounded-xl border border-slate-700 transition flex items-center gap-2 text-sm" title="Vider les équipes actuellement sur le terrain">
+                        <i class="fa-solid fa-xmark text-red-400"></i>
+                        <span>Réinit. Terrain</span>
+                    </button>
+
+                    <button onclick="reinitialiserCompteursJoues()" class="touch-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-300 font-semibold px-4 rounded-xl border border-slate-700 transition flex items-center gap-2 text-sm" title="Remettre à zéro tous les compteurs de matchs">
+                        <i class="fa-solid fa-rotate-right text-amber-400"></i>
+                        <span>Réinit. Compteurs Joués</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Équipes Actuellement Sélectionnées sur le Terrain -->
+            <div class="mt-6">
+                <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-display text-pitch-500"></i> Équipes actuellement sur le terrain
+                </h3>
+                <div id="playing-teams" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="col-span-full py-10 text-center border-2 border-dashed border-slate-800 rounded-2xl bg-slate-950/40">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-850 flex items-center justify-center mx-auto mb-2 text-slate-600">
+                            <i class="fa-solid fa-shield-halved text-2xl"></i>
+                        </div>
+                        <p class="text-slate-300 font-semibold text-base">Aucune équipe sur le terrain.</p>
+                        <p class="text-xs text-slate-500 mt-1">Cochez les équipes dans la liste ci-dessous puis cliquez sur "Valider & Faire Jouer".</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grille de Cochage avec Compteur -->
+            <div class="mt-8 pt-6 border-t border-slate-800">
+                <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-amber-400"></i> Cocher les équipes à faire jouer
+                </h3>
+                <div id="selection-teams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <!-- Dynamiquement généré avec cases à cocher et compteurs -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Étape 3 : Attribution des Points -->
+        <section id="points-section" class="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 shadow-2xl hidden">
+            <div class="flex items-center gap-2 text-pitch-500 font-bold text-xs uppercase tracking-wider mb-2">
+                <span class="w-7 h-7 rounded-lg bg-pitch-500/10 flex items-center justify-center text-sm font-extrabold border border-pitch-500/20">3</span>
+                Étape 3 &bull; Résultat des Matchs
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-1">Attribution des Points de la Session</h2>
+            <p class="text-slate-400 text-sm mb-6">Ajouter des points directement aux équipes actuellement sélectionnées sur le terrain.</p>
+
+            <div id="points-controls" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                <!-- Populé dynamiquement -->
+            </div>
+        </section>
+
+        <!-- Étape 4 : Composition Tactique -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+                <div>
+                    <div class="flex items-center gap-2 text-pitch-500 font-bold text-xs uppercase tracking-wider mb-2">
+                        <span class="w-7 h-7 rounded-lg bg-pitch-500/10 flex items-center justify-center text-sm font-extrabold border border-pitch-500/20">4</span>
+                        Étape 4 &bull; Composition Tactique
+                    </div>
+                    <h2 class="text-2xl font-bold text-white">Gestion & Recherche par Équipe</h2>
+                    <p class="text-slate-400 text-sm">Tapez le nom d'un élève dans le champ d'une équipe pour afficher les suggestions et l'ajouter.</p>
+                </div>
+
+                <button onclick="ajouterNouvelleEquipe()" class="touch-btn bg-slate-800 hover:bg-pitch-600 text-slate-200 hover:text-white font-bold px-5 rounded-xl border border-slate-700 hover:border-pitch-500 transition shadow-md flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-solid fa-plus text-pitch-500 text-base"></i>
+                    <span>Ajouter une équipe vide</span>
+                </button>
+            </div>
+
+            <div id="all-teams" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
+                <!-- Populé dynamiquement -->
+            </div>
+        </section>
+
+        <!-- Étape 5 : Classement -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+                <div>
+                    <div class="flex items-center gap-2 text-accent-500 font-bold text-xs uppercase tracking-wider mb-2">
+                        <span class="w-7 h-7 rounded-lg bg-accent-500/10 flex items-center justify-center text-sm font-extrabold border border-accent-500/20">5</span>
+                        Étape 5 &bull; Palmarès
+                    </div>
+                    <h2 class="text-2xl font-bold text-white">Classement Général des Équipes</h2>
+                    <p class="text-slate-400 text-sm">Cumul automatique des points obtenus par chaque équipe.</p>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                    <!-- NOUVEAU BOUTON : Réinitialiser le total de points -->
+                    <button onclick="reinitialiserTotalPoints()" class="touch-btn-sm bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-300 font-semibold px-4 rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 text-xs shrink-0" title="Remettre le compteur de points de toutes les équipes à zero">
+                        <i class="fa-solid fa-rotate text-red-400"></i>
+                        <span>Réinit. Total Points</span>
+                    </button>
+
+                    <div class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                        <input type="text" id="leaderboard-filter" oninput="renderLeaderboard()" placeholder="Filtrer une équipe..." class="w-full h-12 bg-slate-950 text-slate-200 text-sm rounded-xl pl-11 pr-4 border border-slate-800 focus:outline-none focus:border-pitch-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto mt-6">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-slate-400 font-bold text-xs uppercase tracking-wider bg-slate-950/60">
+                            <th class="py-4 px-6 rounded-l-xl">Rang</th>
+                            <th class="py-4 px-6">Équipe</th>
+                            <th class="py-4 px-6">Matchs Joués</th>
+                            <th class="py-4 px-6">Effectif</th>
+                            <th class="py-4 px-6 text-right rounded-r-xl">Total Points</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body" class="divide-y divide-slate-800/60">
+                        <tr>
+                            <td colspan="5" class="py-12 text-center text-slate-500 font-medium">Aucune équipe à afficher pour le moment.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal confirmation for reset -->
+    <div id="reset-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white">Réinitialiser tout le tournoi ?</h3>
+            <p class="text-sm text-slate-400">Cette action va supprimer l'intégralité des élèves, des équipes, des points et de l'historique de votre navigateur. Voulez-vous continuer ?</p>
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button onclick="fermerResetModal()" class="touch-btn-sm px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs">Annuler</button>
+                <button onclick="effectuerResetComplet()" class="touch-btn-sm px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-red-600/30">Oui, tout effacer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 max-w-md bg-slate-900 text-white border border-slate-700 px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-4">
+        <i id="toast-icon" class="fa-solid fa-circle-info text-pitch-500 text-xl"></i>
+        <span id="toast-message" class="text-sm font-semibold">Notification</span>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'FOOTBALL_TOURNAMENT_APP_DATA_V3';
+
+        // Structure d'une équipe: { id, name, playCount: 0, checked: false, points: 0 }
+        let players = [];      // { id, name, teamId }
+        let teams = [];        // { id, name, playCount, checked, points }
+        let currentPlayingTeamIds = []; 
+
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+                    event.preventDefault();
+                }
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = message;
+
+            if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-pitch-500 text-xl';
+            } else if (type === 'warning') {
+                toastIcon.className = 'fa-solid fa-triangle-exclamation text-accent-500 text-xl';
+            } else if (type === 'error') {
+                toastIcon.className = 'fa-solid fa-circle-exclamation text-red-500 text-xl';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-info text-blue-400 text-xl';
+            }
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3200);
+        }
+
+        // ==========================================
+        // LOCAL STORAGE & IMPORT / EXPORT
+        // ==========================================
+
+        function sauvegarderAutomatiquement() {
+            try {
+                const payload = {
+                    version: 3,
+                    timestamp: new Date().toISOString(),
+                    players: players,
+                    teams: teams,
+                    currentPlayingTeamIds: currentPlayingTeamIds
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+            } catch (e) {
+                console.error("Erreur de sauvegarde :", e);
+            }
+        }
+
+        function chargerDepuisLocalStorage() {
+            try {
+                const dataRaw = localStorage.getItem(STORAGE_KEY);
+                if (dataRaw) {
+                    const parsed = JSON.parse(dataRaw);
+                    if (parsed && Array.isArray(parsed.players) && Array.isArray(parsed.teams)) {
+                        players = parsed.players;
+                        teams = parsed.teams.map(t => ({
+                            id: t.id,
+                            name: t.name,
+                            playCount: t.playCount || 0,
+                            checked: !!t.checked,
+                            points: t.points || 0
+                        }));
+                        currentPlayingTeamIds = parsed.currentPlayingTeamIds || [];
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.error("Erreur de chargement :", e);
+            }
+            return false;
+        }
+
+        function exporterSauvegardeJSON() {
+            if (players.length === 0 && teams.length === 0) {
+                showToast("Aucune donnée à exporter.", "warning");
+                return;
+            }
+
+            const dataToExport = {
+                appName: "TournoiFoot",
+                exportDate: new Date().toISOString(),
+                players: players,
+                teams: teams,
+                currentPlayingTeamIds: currentPlayingTeamIds
+            };
+
+            const jsonStr = JSON.stringify(dataToExport, null, 2);
+            const blob = new Blob([jsonStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+
+            const nowStr = new Date().toISOString().slice(0,10);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sauvegarde_tournoi_foot_${nowStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast("Sauvegarde JSON téléchargée !", "success");
+        }
+
+        function importerSauvegardeJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && Array.isArray(parsed.players) && Array.isArray(parsed.teams)) {
+                        players = parsed.players;
+                        teams = parsed.teams.map(t => ({
+                            id: t.id,
+                            name: t.name,
+                            playCount: t.playCount || 0,
+                            checked: !!t.checked,
+                            points: t.points || 0
+                        }));
+                        currentPlayingTeamIds = parsed.currentPlayingTeamIds || [];
+                        
+                        sauvegarderAutomatiquement();
+                        renderAll();
+                        showToast("Sauvegarde JSON chargée avec succès !", "success");
+                    } else {
+                        showToast("Format du fichier JSON invalide.", "error");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showToast("Erreur lors de la lecture du fichier JSON.", "error");
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function demanderResetComplet() {
+            document.getElementById('reset-modal').classList.remove('hidden');
+        }
+
+        function fermerResetModal() {
+            document.getElementById('reset-modal').classList.add('hidden');
+        }
+
+        function effectuerResetComplet() {
+            players = [];
+            teams = [];
+            currentPlayingTeamIds = [];
+            localStorage.removeItem(STORAGE_KEY);
+            fermerResetModal();
+            renderAll();
+            showToast("Toutes les données ont été réinitialisées.", "info");
+        }
+
+        // ==========================================
+        // IMPORTATION EXCEL
+        // ==========================================
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            const labelText = document.getElementById('file-label-text');
+            if (file) {
+                labelText.textContent = file.name;
+            } else {
+                labelText.textContent = "Choisir un fichier Excel (.xlsx) ou CSV";
+            }
+        }
+
+        function importerExcel() {
+            const fileInput = document.getElementById('excelFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showToast("Veuillez sélectionner un fichier Excel ou CSV.", "warning");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const firstSheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                    let loadedNames = [];
+                    jsonData.forEach(row => {
+                        if (row && row[0] !== undefined && row[0] !== null) {
+                            const name = String(row[0]).trim();
+                            if (name !== "" && name.toLowerCase() !== "nom" && name.toLowerCase() !== "élèves" && name.toLowerCase() !== "eleves") {
+                                loadedNames.push(name);
+                            }
+                        }
+                    });
+
+                    if (loadedNames.length === 0) {
+                        showToast("Aucun nom d'élève valide trouvé dans la première colonne.", "error");
+                        return;
+                    }
+
+                    let startId = players.length > 0 ? Math.max(...players.map(p => p.id)) + 1 : 1;
+                    let countAdded = 0;
+
+                    loadedNames.forEach(name => {
+                        if (!players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+                            players.push({
+                                id: startId++,
+                                name: name,
+                                teamId: null
+                            });
+                            countAdded++;
+                        }
+                    });
+
+                    if (teams.length === 0) {
+                        for (let i = 1; i <= 4; i++) {
+                            teams.push({
+                                id: i,
+                                name: `Équipe ${i}`,
+                                playCount: 0,
+                                checked: false,
+                                points: 0
+                            });
+                        }
+                    }
+
+                    showToast(`${countAdded} élève(s) ajouté(s) à la réserve !`, "success");
+                    renderAll();
+                } catch (err) {
+                    console.error(err);
+                    showToast("Erreur lors de l'analyse du fichier Excel.", "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // ==========================================
+        // GESTION MANUELLE & COMPTEUR DE MATCHS
+        // ==========================================
+
+        function toggleTeamSelection(teamId) {
+            const team = teams.find(t => t.id === teamId);
+            if (team) {
+                team.checked = !team.checked;
+                sauvegarderAutomatiquement();
+                renderSelectionGrid();
+            }
+        }
+
+        function validerSelectionMatch() {
+            const selectedTeams = teams.filter(t => t.checked);
+            
+            if (selectedTeams.length === 0) {
+                showToast("Veuillez cocher au moins une équipe à faire jouer.", "warning");
+                return;
+            }
+
+            // Incrémenter le compteur de sélection des équipes cochées
+            selectedTeams.forEach(t => {
+                t.playCount = (t.playCount || 0) + 1;
+            });
+
+            currentPlayingTeamIds = selectedTeams.map(t => t.id);
+
+            sauvegarderAutomatiquement();
+            renderAll();
+            showToast(`${selectedTeams.length} équipe(s) envoyée(s) sur le terrain (+1 match au compteur) !`, "success");
+        }
+
+        // NOUVELLE FONCTION : Réinitialiser les équipes du terrain
+        function reinitialiserEquipesTerrain() {
+            currentPlayingTeamIds = [];
+            teams.forEach(t => t.checked = false);
+            sauvegarderAutomatiquement();
+            renderAll();
+            showToast("Le terrain et la sélection ont été réinitialisés.", "info");
+        }
+
+        function reinitialiserCompteursJoues() {
+            teams.forEach(t => t.playCount = 0);
+            sauvegarderAutomatiquement();
+            renderAll();
+            showToast("Tous les compteurs de matchs ont été réinitialisés à 0.", "info");
+        }
+
+        // NOUVELLE FONCTION : Réinitialiser le total des points
+        function reinitialiserTotalPoints() {
+            teams.forEach(t => t.points = 0);
+            sauvegarderAutomatiquement();
+            renderLeaderboard();
+            showToast("Le total des points a été réinitialisé à 0.", "info");
+        }
+
+        // ==========================================
+        // GESTION DES ÉQUIPES ET JOUEURS
+        // ==========================================
+
+        function ajouterNouvelleEquipe() {
+            const newId = teams.length > 0 ? Math.max(...teams.map(t => t.id)) + 1 : 1;
+            teams.push({
+                id: newId,
+                name: `Équipe ${newId}`,
+                playCount: 0,
+                checked: false,
+                points: 0
+            });
+            showToast(`Nouvelle équipe "${teams[teams.length - 1].name}" ajoutée !`, "success");
+            renderAll();
+        }
+
+        function changerNomEquipe(teamId, newName) {
+            const team = teams.find(t => t.id === teamId);
+            if (team && newName.trim() !== "") {
+                team.name = newName.trim();
+                renderAll();
+            }
+        }
+
+        function supprimerEquipe(teamId) {
+            const team = teams.find(t => t.id === teamId);
+            if (!team) return;
+
+            players.forEach(p => {
+                if (p.teamId === teamId) p.teamId = null;
+            });
+
+            teams = teams.filter(t => t.id !== teamId);
+            currentPlayingTeamIds = currentPlayingTeamIds.filter(id => id !== teamId);
+
+            showToast(`L'équipe "${team.name}" a été supprimée.`, "info");
+            renderAll();
+        }
+
+        function filtrerSuggestions(teamId, query) {
+            const listContainer = document.getElementById(`suggestions-${teamId}`);
+            if (!listContainer) return;
+
+            if (!query.trim()) {
+                listContainer.innerHTML = '';
+                listContainer.classList.add('hidden');
+                return;
+            }
+
+            const matches = players.filter(p => 
+                p.name.toLowerCase().includes(query.toLowerCase())
+            );
+
+            if (matches.length === 0) {
+                listContainer.innerHTML = `<li class="p-3 text-xs text-slate-500 text-center font-medium">Aucun élève trouvé</li>`;
+                listContainer.classList.remove('hidden');
+                return;
+            }
+
+            listContainer.innerHTML = '';
+            matches.slice(0, 6).forEach(p => {
+                const currentTeam = teams.find(t => t.id === p.teamId);
+                const teamLabel = currentTeam 
+                    ? `<span class="text-amber-400 font-semibold">${currentTeam.name}</span>` 
+                    : `<span class="text-pitch-400 font-semibold">Disponible</span>`;
+                
+                const item = document.createElement('li');
+                item.className = 'touch-btn-sm px-4 py-3 hover:bg-slate-800 cursor-pointer text-xs flex items-center justify-between transition border-b border-slate-800/80 last:border-0';
+                item.innerHTML = `
+                    <span class="font-bold text-slate-200">${p.name}</span>
+                    <span class="text-[10px] bg-slate-950 px-2.5 py-1 rounded-md border border-slate-800">${teamLabel}</span>
+                `;
+                item.onclick = function() {
+                    assignerJoueurAEquipe(p.id, teamId);
+                };
+                listContainer.appendChild(item);
+            });
+
+            listContainer.classList.remove('hidden');
+        }
+
+        function assignerJoueurAEquipe(playerId, targetTeamId) {
+            const player = players.find(p => p.id === playerId);
+            const team = teams.find(t => t.id === targetTeamId);
+            
+            if (player && team) {
+                player.teamId = targetTeamId;
+                showToast(`${player.name} placé dans ${team.name}`, "success");
+                renderAll();
+            }
+        }
+
+        function retirerJoueurDeEquipe(playerId) {
+            const player = players.find(p => p.id === playerId);
+            if (player) {
+                player.teamId = null;
+                showToast(`${player.name} retiré de l'équipe`, "info");
+                renderAll();
+            }
+        }
+
+        function ajouterPointsEquipe(teamId, pts) {
+            const team = teams.find(t => t.id === teamId);
+            if (team) {
+                team.points = (team.points || 0) + pts;
+                sauvegarderAutomatiquement();
+                renderLeaderboard();
+                showToast(`+${pts} pt(s) attribué(s) à l'équipe ${team.name} !`, pts === 0 ? "info" : "success");
+            }
+        }
+
+        // ==========================================
+        // RENDU DE L'INTERFACE
+        // ==========================================
+
+        function renderAll() {
+            sauvegarderAutomatiquement();
+            renderSelectionGrid();
+            renderPlayingTeams();
+            renderAllTeams();
+            renderLeaderboard();
+            updateStatsBadges();
+        }
+
+        function updateStatsBadges() {
+            document.getElementById('total-players-count').textContent = players.length;
+            const unassigned = players.filter(p => p.teamId === null).length;
+            document.getElementById('unassigned-players-count').textContent = unassigned;
+            document.getElementById('total-teams-count').textContent = teams.length;
+        }
+
+        function renderSelectionGrid() {
+            const grid = document.getElementById('selection-teams-grid');
+            if (teams.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-slate-500 text-sm text-center py-4">Aucune équipe créée pour le moment.</p>`;
+                return;
+            }
+
+            grid.innerHTML = '';
+            teams.forEach(team => {
+                const count = team.playCount || 0;
+                let badgeColor = 'bg-slate-800 text-slate-400 border-slate-700';
+                
+                // Code couleur visuel selon si l'équipe a joué ou non
+                if (count === 0) {
+                    badgeColor = 'bg-red-500/20 text-red-400 border-red-500/40 font-bold'; // Jamais joué
+                } else if (count === 1) {
+                    badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+                } else {
+                    badgeColor = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+                }
+
+                grid.innerHTML += `
+                    <div onclick="toggleTeamSelection(${team.id})" class="touch-btn cursor-pointer p-4 rounded-xl border ${team.checked ? 'border-pitch-500 bg-pitch-950/40 shadow-lg shadow-pitch-950/50' : 'border-slate-800 bg-slate-950/60 hover:bg-slate-850'} transition flex items-center justify-between">
+                        <div class="flex items-center gap-3 truncate">
+                            <input type="checkbox" ${team.checked ? 'checked' : ''} class="w-5 h-5 rounded border-slate-700 text-pitch-600 focus:ring-pitch-500 pointer-events-none">
+                            <span class="font-bold text-sm text-slate-200 truncate">${team.name}</span>
+                        </div>
+                        <span class="text-xs px-2.5 py-1 rounded-lg border ${badgeColor} shrink-0 flex items-center gap-1" title="${count === 0 ? 'N\'a pas encore joué !' : 'Nombre de fois sélectionnée'}">
+                            <i class="fa-solid fa-gamepad text-[10px]"></i>
+                            ${count === 0 ? 'Jamais joué' : count + ' match(s)'}
+                        </span>
+                    </div>
+                `;
+            });
+        }
+
+        function renderPlayingTeams() {
+            const container = document.getElementById('playing-teams');
+            const pointsSection = document.getElementById('points-section');
+            const pointsControls = document.getElementById('points-controls');
+
+            const selectedTeams = teams.filter(t => currentPlayingTeamIds.includes(t.id));
+
+            if (selectedTeams.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-10 text-center border-2 border-dashed border-slate-800 rounded-2xl bg-slate-950/40">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-850 flex items-center justify-center mx-auto mb-2 text-slate-600">
+                            <i class="fa-solid fa-shield-halved text-2xl"></i>
+                        </div>
+                        <p class="text-slate-300 font-semibold text-base">Aucune équipe sur le terrain.</p>
+                        <p class="text-xs text-slate-500 mt-1">Cochez les équipes dans la liste ci-dessous puis cliquez sur "Valider & Faire Jouer".</p>
+                    </div>
+                `;
+                pointsSection.classList.add('hidden');
+                return;
+            }
+
+            container.innerHTML = '';
+            pointsControls.innerHTML = '';
+
+            selectedTeams.forEach(team => {
+                const teamPlayers = players.filter(p => p.teamId === team.id);
+                let playersHtml = teamPlayers.map(p => `
+                    <li class="flex items-center gap-2 text-xs py-1.5 text-slate-200">
+                        <i class="fa-solid fa-user text-pitch-500 text-xs"></i>
+                        <span class="font-bold">${p.name}</span>
+                    </li>
+                `).join('');
+
+                if (teamPlayers.length === 0) {
+                    playersHtml = `<li class="text-xs text-slate-500 italic py-2">Équipe vide</li>`;
+                }
+
+                container.innerHTML += `
+                    <div class="bg-slate-950 border-2 border-pitch-500/80 rounded-2xl p-5 shadow-xl relative overflow-hidden flex flex-col justify-between">
+                        <div class="absolute top-0 right-0 bg-pitch-600 text-white text-[10px] font-black tracking-wider uppercase px-3 py-1 rounded-bl-xl">
+                            SUR LE TERRAIN
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-800">
+                                <i class="fa-solid fa-shield-cat text-pitch-500 text-xl"></i>
+                                <div>
+                                    <h3 class="font-extrabold text-white text-lg truncate">${team.name}</h3>
+                                    <p class="text-[10px] text-pitch-400 font-semibold">${team.playCount || 0} match(s) joué(s)</p>
+                                </div>
+                            </div>
+                            <ul class="space-y-1 mb-4">
+                                ${playersHtml}
+                            </ul>
+                        </div>
+                        <div class="text-xs text-slate-400 border-t border-slate-900 pt-3 flex justify-between items-center">
+                            <span>Effectif</span>
+                            <span class="font-bold text-white bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">${teamPlayers.length} joueur(s)</span>
+                        </div>
+                    </div>
+                `;
+
+                pointsControls.innerHTML += `
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-lg">
+                        <div class="font-extrabold text-white mb-4 text-center text-base truncate">${team.name}</div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="ajouterPointsEquipe(${team.id}, 3)" class="touch-btn bg-pitch-600 hover:bg-pitch-500 active:bg-pitch-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1 shadow-md">
+                                <i class="fa-solid fa-trophy text-xs"></i> +3 (Victoire)
+                            </button>
+                            <button onclick="ajouterPointsEquipe(${team.id}, 1)" class="touch-btn bg-accent-600 hover:bg-accent-500 active:bg-accent-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1 shadow-md">
+                                <i class="fa-solid fa-handshake text-xs"></i> +1 (Nul)
+                            </button>
+                            <button onclick="ajouterPointsEquipe(${team.id}, 0)" class="touch-btn bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1 shadow-md">
+                                <i class="fa-solid fa-xmark text-xs"></i> +0 (Perdu)
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            pointsSection.classList.remove('hidden');
+        }
+
+        function renderAllTeams() {
+            const container = document.getElementById('all-teams');
+            if (teams.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-12 text-center border-2 border-dashed border-slate-800 rounded-2xl">
+                        <p class="text-slate-400 font-medium">Aucune équipe n'existe encore. Cliquez sur "Ajouter une équipe vide".</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+
+            teams.forEach(team => {
+                const teamPlayers = players.filter(p => p.teamId === team.id);
+                
+                let playersHtml = teamPlayers.map(p => `
+                    <li class="flex items-center justify-between bg-slate-900/90 hover:bg-slate-850 px-3.5 py-2 rounded-xl border border-slate-800/80 transition">
+                        <span class="text-xs font-bold text-slate-200 truncate">👤 ${p.name}</span>
+                        <button onclick="retirerJoueurDeEquipe(${p.id})" title="Retirer de l'équipe" class="touch-btn-sm text-slate-500 hover:text-red-400 transition flex items-center justify-center">
+                            <i class="fa-solid fa-xmark text-sm"></i>
+                        </button>
+                    </li>
+                `).join('');
+
+                container.innerHTML += `
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-xl relative">
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800">
+                                <input 
+                                    type="text" 
+                                    value="${team.name}" 
+                                    onchange="changerNomEquipe(${team.id}, this.value)"
+                                    title="Cliquer pour modifier le nom"
+                                    class="bg-transparent font-extrabold text-slate-100 text-base focus:outline-none focus:bg-slate-900 focus:px-2 focus:py-1 rounded-lg border border-transparent focus:border-pitch-500 w-full truncate"
+                                />
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 shrink-0">
+                                        ${teamPlayers.length}/5
+                                    </span>
+                                    <button onclick="supprimerEquipe(${team.id})" title="Supprimer l'équipe" class="touch-btn-sm text-slate-600 hover:text-red-400 transition flex items-center justify-center">
+                                        <i class="fa-solid fa-trash-can text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <ul class="space-y-2 mb-4 max-h-56 overflow-y-auto pr-1">
+                                ${playersHtml.length > 0 ? playersHtml : '<li class="text-xs text-slate-500 text-center py-6 italic border border-dashed border-slate-900 rounded-xl">Équipe vide</li>'}
+                            </ul>
+                        </div>
+
+                        <div class="relative mt-2">
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                                <input 
+                                    type="text" 
+                                    placeholder="🔍 Ajouter un élève..." 
+                                    oninput="filtrerSuggestions(${team.id}, this.value)"
+                                    onfocus="filtrerSuggestions(${team.id}, this.value)"
+                                    class="w-full h-11 bg-slate-900 text-slate-200 text-xs rounded-xl pl-10 pr-3 border border-slate-800 focus:outline-none focus:border-pitch-500 transition"
+                                />
+                            </div>
+                            <ul id="suggestions-${team.id}" class="suggestions-dropdown hidden absolute left-0 right-0 bottom-full mb-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-30 max-h-48 overflow-y-auto">
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderLeaderboard() {
+            const tbody = document.getElementById('leaderboard-body');
+            const filterInput = document.getElementById('leaderboard-filter');
+            const filterQuery = filterInput ? filterInput.value.toLowerCase().trim() : '';
+
+            if (teams.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-500 font-medium">Aucune équipe disponible.</td></tr>`;
+                return;
+            }
+
+            let teamsRanking = teams.map(team => {
+                const teamPlayers = players.filter(p => p.teamId === team.id);
+                return {
+                    id: team.id,
+                    name: team.name,
+                    playCount: team.playCount || 0,
+                    playerCount: teamPlayers.length,
+                    points: team.points || 0
+                };
+            });
+
+            let filtered = teamsRanking.filter(t => t.name.toLowerCase().includes(filterQuery));
+            filtered.sort((a, b) => b.points - a.points);
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-500 font-medium">Aucune équipe ne correspond à votre recherche.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            filtered.forEach((t, index) => {
+                let rankBadge = `<span class="font-bold text-slate-400 text-sm">#${index + 1}</span>`;
+                if (index === 0) rankBadge = `<span class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 font-black text-sm flex items-center justify-center">🥇</span>`;
+                if (index === 1) rankBadge = `<span class="w-8 h-8 rounded-xl bg-slate-400/20 text-slate-300 border border-slate-400/40 font-black text-sm flex items-center justify-center">🥈</span>`;
+                if (index === 2) rankBadge = `<span class="w-8 h-8 rounded-xl bg-amber-700/20 text-amber-600 border border-amber-700/40 font-black text-sm flex items-center justify-center">🥉</span>`;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/80 transition">
+                        <td class="py-4 px-6">${rankBadge}</td>
+                        <td class="py-4 px-6 font-bold text-slate-100 text-base">
+                            <span class="inline-flex items-center gap-2">
+                                <i class="fa-solid fa-shield text-pitch-500 text-sm"></i>
+                                ${t.name}
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 text-slate-300 text-sm font-semibold">${t.playCount} match(s)</td>
+                        <td class="py-4 px-6 text-slate-400 text-sm font-medium">${t.playerCount} joueur(s)</td>
+                        <td class="py-4 px-6 text-right font-black text-pitch-400 text-lg">${t.points} <span class="text-xs font-medium text-slate-500">pts</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.relative')) {
+                document.querySelectorAll('.suggestions-dropdown').forEach(el => el.classList.add('hidden'));
+            }
+        });
+
+        window.onload = function() {
+            const hasRestored = chargerDepuisLocalStorage();
+            if (hasRestored) {
+                showToast("Dernière session restaurée automatiquement.", "info");
+            }
+            renderAll();
+        };
+    </script>
+</body>
+</html>
