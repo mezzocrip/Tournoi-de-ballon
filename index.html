@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-    <title>Tournoi de Football - Manuel avec Compteur</title>
+    <title>Tournoi de Football</title>
     <link rel="apple-touch-icon" href="./Logo.PNG">
 
     <!-- Tailwind CSS -->
@@ -91,7 +91,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-3">
-                        Tournoi Foot <span class="text-xs font-semibold px-2.5 py-1 bg-pitch-600/20 text-pitch-400 border border-pitch-500/30 rounded-lg">Sélection Manuel</span>
+                        Tournoi Foot <span class="text-xs font-semibold px-2.5 py-1 bg-pitch-600/20 text-pitch-400 border border-pitch-500/30 rounded-lg">Gestionnaire Planning</span>
                     </h1>
                     <p class="text-xs text-slate-400 font-medium flex items-center gap-2">
                         <span>Gestionnaire Scolaire</span> &bull; 
@@ -177,16 +177,20 @@
                         Étape 2 &bull; Session de Jeu
                     </div>
                     <h2 class="text-2xl font-bold text-white">Sélection des Équipes pour le Match</h2>
-                    <p class="text-slate-400 text-sm">Cochez les équipes qui doivent jouer. Un compteur enregistre le nombre de matchs joués par chaque équipe.</p>
+                    <p class="text-slate-400 text-sm">Cochez les équipes ou utilisez le bouton de planning automatique.</p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
-                    <button onclick="validerSelectionMatch()" class="touch-btn bg-gradient-to-r from-pitch-600 to-pitch-500 hover:from-pitch-500 hover:to-pitch-600 active:scale-[0.98] text-white font-bold px-6 rounded-xl shadow-xl shadow-pitch-600/30 transition flex items-center gap-3">
-                        <i class="fa-solid fa-check-double text-xl"></i>
-                        <span class="text-base">Valider & Faire Jouer les Sélectionnées</span>
+                    <button onclick="selectionnerSelonPlanning()" class="touch-btn bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold px-5 rounded-xl shadow-lg shadow-amber-600/30 transition flex items-center gap-2 text-sm" title="Cocher automatiquement les équipes prévues pour le prochain match">
+                        <i class="fa-solid fa-calendar-check text-base"></i>
+                        <span>Auto-sélection Planning</span>
                     </button>
 
-                    <!-- NOUVEAU BOUTON : Réinitialiser le terrain -->
+                    <button onclick="validerSelectionMatch()" class="touch-btn bg-gradient-to-r from-pitch-600 to-pitch-500 hover:from-pitch-500 hover:to-pitch-600 active:scale-[0.98] text-white font-bold px-6 rounded-xl shadow-xl shadow-pitch-600/30 transition flex items-center gap-3">
+                        <i class="fa-solid fa-check-double text-xl"></i>
+                        <span class="text-base">Valider & Faire Jouer</span>
+                    </button>
+
                     <button onclick="reinitialiserEquipesTerrain()" class="touch-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-300 font-semibold px-4 rounded-xl border border-slate-700 transition flex items-center gap-2 text-sm" title="Vider les équipes actuellement sur le terrain">
                         <i class="fa-solid fa-xmark text-red-400"></i>
                         <span>Réinit. Terrain</span>
@@ -276,7 +280,6 @@
                 </div>
                 
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                    <!-- NOUVEAU BOUTON : Réinitialiser le total de points -->
                     <button onclick="reinitialiserTotalPoints()" class="touch-btn-sm bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-300 font-semibold px-4 rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 text-xs shrink-0" title="Remettre le compteur de points de toutes les équipes à zero">
                         <i class="fa-solid fa-rotate text-red-400"></i>
                         <span>Réinit. Total Points</span>
@@ -340,6 +343,40 @@
         let teams = [];        // { id, name, playCount, checked, points }
         let currentPlayingTeamIds = []; 
 
+        // Calendrier intégrant les phases de brassage
+        const PLANNING_MATCHS = [
+            { date: "2026-09-29", jour: "Mardi 29 Septembre (A)", teamIds: [6, 7, 8, 9, 10] },
+            { date: "2026-10-08", jour: "Jeudi 8 Octobre (B)", teamIds: [1, 2, 3, 4, 5] },
+            { date: "2026-10-13", jour: "Mardi 13 Octobre (A)", teamIds: [6, 7, 8, 9, 10] },
+            { date: "2026-11-05", jour: "Jeudi 5 Novembre (B)", teamIds: [1, 2, 3, 4, 5] },
+            { date: "2026-11-10", jour: "Mardi 10 Novembre (A)", teamIds: [6, 7, 8, 9, 10] },
+            { date: "2026-11-19", jour: "Jeudi 19 Novembre (B)", teamIds: [1, 2, 3, 4, 5] },
+            { date: "2026-11-24", jour: "Mardi 24 Novembre (A)", teamIds: [6, 7, 8, 9, 10] },
+            { date: "2026-12-03", jour: "Jeudi 3 Décembre (B)", teamIds: [2, 4, 6, 8, 10] },
+            { date: "2026-12-08", jour: "Mardi 8 Décembre (A)", teamIds: [1, 3, 5, 7, 9] },
+            { date: "2026-12-17", jour: "Jeudi 17 Décembre (B)", teamIds: [2, 4, 6, 8, 10] },
+            { date: "2027-01-05", jour: "Mardi 5 Janvier (A)", teamIds: [1, 3, 5, 7, 9] },
+            { date: "2027-01-14", jour: "Jeudi 14 Janvier (B)", teamIds: [2, 4, 6, 8, 10] },
+            { date: "2027-01-19", jour: "Mardi 19 Janvier (A)", teamIds: [1, 3, 5, 7, 9] },
+            { date: "2027-01-28", jour: "Jeudi 28 Janvier (B)", teamIds: [2, 4, 6, 8, 10] },
+            { date: "2027-02-02", jour: "Mardi 2 Février (A)", teamIds: [1, 3, 5, 7, 9] },
+            { date: "2027-02-25", jour: "Jeudi 25 Février (B)", teamIds: [3, 4, 5, 6, 10] },
+            { date: "2027-03-02", jour: "Mardi 2 Mars (A)", teamIds: [1, 2, 7, 8, 9] },
+            { date: "2027-03-11", jour: "Jeudi 11 Mars (B)", teamIds: [3, 4, 5, 6, 10] },
+            { date: "2027-03-16", jour: "Mardi 16 Mars (A)", teamIds: [1, 2, 7, 8, 9] },
+            { date: "2027-03-25", jour: "Jeudi 25 Mars (B)", teamIds: [3, 4, 5, 6, 10] },
+            { date: "2027-03-30", jour: "Mardi 30 Mars (A)", teamIds: [1, 2, 7, 8, 9] },
+            { date: "2027-04-08", jour: "Jeudi 8 Avril (B)", teamIds: [3, 4, 5, 6, 10] },
+            { date: "2027-04-27", jour: "Mardi 27 Avril (A)", teamIds: [2, 5, 6, 8, 9] },
+            { date: "2027-05-06", jour: "Jeudi 6 Mai (B)", teamIds: [1, 3, 4, 7, 10] },
+            { date: "2027-05-11", jour: "Mardi 11 Mai (A)", teamIds: [2, 5, 6, 8, 9] },
+            { date: "2027-05-20", jour: "Jeudi 20 Mai (B)", teamIds: [1, 3, 4, 7, 10] },
+            { date: "2027-05-25", jour: "Mardi 25 Mai (A)", teamIds: [2, 5, 6, 8, 9] },
+            { date: "2027-06-03", jour: "Jeudi 3 Juin (B)", teamIds: [1, 3, 4, 7, 10] },
+            { date: "2027-06-08", jour: "Mardi 8 Juin (A)", teamIds: [2, 5, 6, 8, 9] },
+            { date: "2027-06-17", jour: "Jeudi 17 Juin (B)", teamIds: [1, 3, 4, 7, 10] }
+        ];
+
         let lastTouchEnd = 0;
         document.addEventListener('touchend', function (event) {
             const now = (new Date()).getTime();
@@ -377,9 +414,24 @@
             }, 3200);
         }
 
-        // ==========================================
-        // LOCAL STORAGE & IMPORT / EXPORT
-        // ==========================================
+        // Auto-sélection basée sur la date/session courante
+        function selectionnerSelonPlanning() {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            
+            // Cherche le match d'aujourd'hui ou le tout premier disponible à partir d'aujourd'hui
+            let match = PLANNING_MATCHS.find(m => m.date >= todayStr);
+            if (!match) {
+                match = PLANNING_MATCHS[0];
+            }
+
+            teams.forEach(t => {
+                t.checked = match.teamIds.includes(t.id);
+            });
+
+            sauvegarderAutomatiquement();
+            renderSelectionGrid();
+            showToast(`Équipes cochées pour ${match.jour} !`, "success");
+        }
 
         function sauvegarderAutomatiquement() {
             try {
@@ -502,10 +554,6 @@
             showToast("Toutes les données ont été réinitialisées.", "info");
         }
 
-        // ==========================================
-        // IMPORTATION EXCEL
-        // ==========================================
-
         function handleFileSelect(event) {
             const file = event.target.files[0];
             const labelText = document.getElementById('file-label-text');
@@ -564,7 +612,7 @@
                     });
 
                     if (teams.length === 0) {
-                        for (let i = 1; i <= 4; i++) {
+                        for (let i = 1; i <= 10; i++) {
                             teams.push({
                                 id: i,
                                 name: `Équipe ${i}`,
@@ -585,10 +633,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ==========================================
-        // GESTION MANUELLE & COMPTEUR DE MATCHS
-        // ==========================================
-
         function toggleTeamSelection(teamId) {
             const team = teams.find(t => t.id === teamId);
             if (team) {
@@ -606,7 +650,6 @@
                 return;
             }
 
-            // Incrémenter le compteur de sélection des équipes cochées
             selectedTeams.forEach(t => {
                 t.playCount = (t.playCount || 0) + 1;
             });
@@ -618,7 +661,6 @@
             showToast(`${selectedTeams.length} équipe(s) envoyée(s) sur le terrain (+1 match au compteur) !`, "success");
         }
 
-        // NOUVELLE FONCTION : Réinitialiser les équipes du terrain
         function reinitialiserEquipesTerrain() {
             currentPlayingTeamIds = [];
             teams.forEach(t => t.checked = false);
@@ -634,17 +676,12 @@
             showToast("Tous les compteurs de matchs ont été réinitialisés à 0.", "info");
         }
 
-        // NOUVELLE FONCTION : Réinitialiser le total des points
         function reinitialiserTotalPoints() {
             teams.forEach(t => t.points = 0);
             sauvegarderAutomatiquement();
             renderLeaderboard();
             showToast("Le total des points a été réinitialisé à 0.", "info");
         }
-
-        // ==========================================
-        // GESTION DES ÉQUIPES ET JOUEURS
-        // ==========================================
 
         function ajouterNouvelleEquipe() {
             const newId = teams.length > 0 ? Math.max(...teams.map(t => t.id)) + 1 : 1;
@@ -754,10 +791,6 @@
             }
         }
 
-        // ==========================================
-        // RENDU DE L'INTERFACE
-        // ==========================================
-
         function renderAll() {
             sauvegarderAutomatiquement();
             renderSelectionGrid();
@@ -786,9 +819,8 @@
                 const count = team.playCount || 0;
                 let badgeColor = 'bg-slate-800 text-slate-400 border-slate-700';
                 
-                // Code couleur visuel selon si l'équipe a joué ou non
                 if (count === 0) {
-                    badgeColor = 'bg-red-500/20 text-red-400 border-red-500/40 font-bold'; // Jamais joué
+                    badgeColor = 'bg-red-500/20 text-red-400 border-red-500/40 font-bold';
                 } else if (count === 1) {
                     badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
                 } else {
