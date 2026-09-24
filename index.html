@@ -343,38 +343,36 @@
         let teams = [];        // { id, name, playCount, checked, points }
         let currentPlayingTeamIds = []; 
 
-        // Calendrier intégrant les phases de brassage
+        // Calendrier ajusté (Septembre 2026 — 30 Mars 2027)
         const PLANNING_MATCHS = [
+            // Phase 1 : Mise à niveau & Poules d'origine
             { date: "2026-09-29", jour: "Mardi 29 Septembre (A)", teamIds: [6, 7, 8, 9, 10] },
             { date: "2026-10-08", jour: "Jeudi 8 Octobre (B)", teamIds: [1, 2, 3, 4, 5] },
             { date: "2026-10-13", jour: "Mardi 13 Octobre (A)", teamIds: [6, 7, 8, 9, 10] },
             { date: "2026-11-05", jour: "Jeudi 5 Novembre (B)", teamIds: [1, 2, 3, 4, 5] },
             { date: "2026-11-10", jour: "Mardi 10 Novembre (A)", teamIds: [6, 7, 8, 9, 10] },
-            { date: "2026-11-19", jour: "Jeudi 19 Novembre (B)", teamIds: [1, 2, 3, 4, 5] },
-            { date: "2026-11-24", jour: "Mardi 24 Novembre (A)", teamIds: [6, 7, 8, 9, 10] },
+
+            // Phase 2 : Premier brassage
+            { date: "2026-11-19", jour: "Jeudi 19 Novembre (B)", teamIds: [2, 4, 6, 8, 10] },
+            { date: "2026-11-24", jour: "Mardi 24 Novembre (A)", teamIds: [1, 3, 5, 7, 9] },
             { date: "2026-12-03", jour: "Jeudi 3 Décembre (B)", teamIds: [2, 4, 6, 8, 10] },
             { date: "2026-12-08", jour: "Mardi 8 Décembre (A)", teamIds: [1, 3, 5, 7, 9] },
             { date: "2026-12-17", jour: "Jeudi 17 Décembre (B)", teamIds: [2, 4, 6, 8, 10] },
             { date: "2027-01-05", jour: "Mardi 5 Janvier (A)", teamIds: [1, 3, 5, 7, 9] },
-            { date: "2027-01-14", jour: "Jeudi 14 Janvier (B)", teamIds: [2, 4, 6, 8, 10] },
-            { date: "2027-01-19", jour: "Mardi 19 Janvier (A)", teamIds: [1, 3, 5, 7, 9] },
-            { date: "2027-01-28", jour: "Jeudi 28 Janvier (B)", teamIds: [2, 4, 6, 8, 10] },
-            { date: "2027-02-02", jour: "Mardi 2 Février (A)", teamIds: [1, 3, 5, 7, 9] },
-            { date: "2027-02-25", jour: "Jeudi 25 Février (B)", teamIds: [3, 4, 5, 6, 10] },
-            { date: "2027-03-02", jour: "Mardi 2 Mars (A)", teamIds: [1, 2, 7, 8, 9] },
-            { date: "2027-03-11", jour: "Jeudi 11 Mars (B)", teamIds: [3, 4, 5, 6, 10] },
-            { date: "2027-03-16", jour: "Mardi 16 Mars (A)", teamIds: [1, 2, 7, 8, 9] },
-            { date: "2027-03-25", jour: "Jeudi 25 Mars (B)", teamIds: [3, 4, 5, 6, 10] },
-            { date: "2027-03-30", jour: "Mardi 30 Mars (A)", teamIds: [1, 2, 7, 8, 9] },
-            { date: "2027-04-08", jour: "Jeudi 8 Avril (B)", teamIds: [3, 4, 5, 6, 10] },
-            { date: "2027-04-27", jour: "Mardi 27 Avril (A)", teamIds: [2, 5, 6, 8, 9] },
-            { date: "2027-05-06", jour: "Jeudi 6 Mai (B)", teamIds: [1, 3, 4, 7, 10] },
-            { date: "2027-05-11", jour: "Mardi 11 Mai (A)", teamIds: [2, 5, 6, 8, 9] },
-            { date: "2027-05-20", jour: "Jeudi 20 Mai (B)", teamIds: [1, 3, 4, 7, 10] },
-            { date: "2027-05-25", jour: "Mardi 25 Mai (A)", teamIds: [2, 5, 6, 8, 9] },
-            { date: "2027-06-03", jour: "Jeudi 3 Juin (B)", teamIds: [1, 3, 4, 7, 10] },
-            { date: "2027-06-08", jour: "Mardi 8 Juin (A)", teamIds: [2, 5, 6, 8, 9] },
-            { date: "2027-06-17", jour: "Jeudi 17 Juin (B)", teamIds: [1, 3, 4, 7, 10] }
+
+            // Phase 3 : Second brassage
+            { date: "2027-01-14", jour: "Jeudi 14 Janvier (B)", teamIds: [2, 4, 7, 8, 9] },
+            { date: "2027-01-19", jour: "Mardi 19 Janvier (A)", teamIds: [1, 3, 5, 6, 10] },
+            { date: "2027-01-28", jour: "Jeudi 28 Janvier (B)", teamIds: [2, 4, 7, 8, 9] },
+            { date: "2027-02-02", jour: "Mardi 2 Février (A)", teamIds: [1, 3, 5, 6, 10] },
+            { date: "2027-02-25", jour: "Jeudi 25 Février (B)", teamIds: [2, 4, 7, 8, 9] },
+            { date: "2027-03-02", jour: "Mardi 2 Mars (A)", teamIds: [1, 3, 5, 6, 10] },
+
+            // Phase 4 : Croisements finaux & Clôture
+            { date: "2027-03-11", jour: "Jeudi 11 Mars (B)", teamIds: [2, 4, 6, 7, 10] },
+            { date: "2027-03-16", jour: "Mardi 16 Mars (A)", teamIds: [1, 3, 5, 8, 9] },
+            { date: "2027-03-25", jour: "Jeudi 25 Mars (B)", teamIds: [2, 4, 6, 7, 10] },
+            { date: "2027-03-30", jour: "Mardi 30 Mars (A)", teamIds: [1, 3, 5, 8, 9] }
         ];
 
         let lastTouchEnd = 0;
