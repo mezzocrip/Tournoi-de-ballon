@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-    <title>Tournoi de Football</title>
+    <title>Tournoi de Football - Gestion des Sessions & Terrains</title>
     <link rel="apple-touch-icon" href="./Logo.PNG">
 
     <!-- Tailwind CSS -->
@@ -148,10 +148,10 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-3">
-                        Tournoi Foot <span class="text-xs font-semibold px-2.5 py-1 bg-pitch-600/20 text-pitch-400 border border-pitch-500/30 rounded-lg">Gestionnaire Planning</span>
+                        Tournoi Foot <span class="text-xs font-semibold px-2.5 py-1 bg-pitch-600/20 text-pitch-400 border border-pitch-500/30 rounded-lg">Gestionnaire de Session</span>
                     </h1>
                     <p class="text-xs text-slate-400 font-medium flex items-center gap-2">
-                        <span>Gestionnaire Scolaire</span> &bull; 
+                        <span>Gestionnaire Scolaire &bull; 2 Terrains (A & B)</span> &bull; 
                         <span id="save-status-badge" class="text-emerald-400 font-semibold flex items-center gap-1">
                             <i class="fa-solid fa-floppy-disk"></i> Sauvegarde locale active
                         </span>
@@ -173,7 +173,17 @@
                 <div class="flex items-center gap-2 bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
                     <i class="fa-solid fa-shield-halved text-blue-400 text-sm"></i>
                     <span class="text-xs text-slate-400 font-medium">Équipes:</span>
-                    <span id="total-teams-count" class="text-sm font-bold text-blue-400">0</span>
+                    <span id="total-teams-count" class="text-sm font-bold text-blue-400">10</span>
+                </div>
+                
+                <!-- BLOC SÉANCES JOUÉES AVEC BOUTON DE RÉINITIALISATION -->
+                <div class="flex items-center gap-2 bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
+                    <i class="fa-solid fa-trophy text-amber-400 text-sm"></i>
+                    <span class="text-xs text-slate-400 font-medium">Séances Jouées:</span>
+                    <span id="total-sessions-played" class="text-sm font-bold text-amber-400">0</span>
+                    <button onclick="reinitialiserSeancesJouees()" title="Réinitialiser le nombre de séances jouées" class="ml-1 text-slate-500 hover:text-amber-400 active:scale-95 transition">
+                        <i class="fa-solid fa-rotate-left text-xs"></i>
+                    </button>
                 </div>
 
                 <div class="h-6 w-px bg-slate-800 hidden md:block"></div>
@@ -225,78 +235,128 @@
             </div>
         </section>
 
-        <!-- Étape 2 : Sélection Manuelle des Équipes -->
+        <!-- Étape 2 : Session de Jeu & Terrains A/B -->
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-800">
                 <div>
                     <div class="flex items-center gap-2 text-accent-500 font-bold text-xs uppercase tracking-wider mb-2">
                         <span class="w-7 h-7 rounded-lg bg-accent-500/10 flex items-center justify-center text-sm font-extrabold border border-accent-500/20">2</span>
-                        Étape 2 &bull; Session de Jeu
+                        Étape 2 &bull; Session de Jeu & Terrains (A & B)
                     </div>
-                    <h2 class="text-2xl font-bold text-white">Sélection des Équipes pour le Match</h2>
-                    <p class="text-slate-400 text-sm">Cochez les équipes ou utilisez le bouton de planning automatique.</p>
+                    <h2 class="text-2xl font-bold text-white">Gestion du Championnat (10 Équipes)</h2>
+                    <p class="text-slate-400 text-sm">Chaque session permet aux 10 équipes de s'affronter toutes une fois (45 matchs au total).</p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
-                    <button onclick="selectionnerSelonPlanning()" class="touch-btn bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold px-5 rounded-xl shadow-lg shadow-amber-600/30 transition flex items-center gap-2 text-sm" title="Cocher automatiquement les équipes prévues pour le prochain match">
-                        <i class="fa-solid fa-calendar-check text-base"></i>
-                        <span>Auto-sélection Planning</span>
+                    <button id="btn-start-session" onclick="demarrerNouvelleSession()" class="touch-btn bg-gradient-to-r from-pitch-600 to-pitch-500 hover:from-pitch-500 hover:to-pitch-600 active:scale-[0.98] text-white font-bold px-5 rounded-xl shadow-xl shadow-pitch-600/30 transition flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-rotate-right text-lg"></i>
+                        <span>Démarrer une nouvelle session</span>
                     </button>
 
-                    <button onclick="validerSelectionMatch()" class="touch-btn bg-gradient-to-r from-pitch-600 to-pitch-500 hover:from-pitch-500 hover:to-pitch-600 active:scale-[0.98] text-white font-bold px-6 rounded-xl shadow-xl shadow-pitch-600/30 transition flex items-center gap-3">
-                        <i class="fa-solid fa-check-double text-xl"></i>
-                        <span class="text-base">Valider & Faire Jouer</span>
+                    <button id="btn-next-round" onclick="lancerProchainTourAleatoire()" class="touch-btn bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold px-5 rounded-xl shadow-lg shadow-amber-600/30 transition flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-shuffle text-lg"></i>
+                        <span>Lancer le prochain tour aléatoire</span>
                     </button>
 
-                    <button onclick="reinitialiserEquipesTerrain()" class="touch-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-300 font-semibold px-4 rounded-xl border border-slate-700 transition flex items-center gap-2 text-sm" title="Vider les équipes actuellement sur le terrain">
-                        <i class="fa-solid fa-xmark text-red-400"></i>
-                        <span>Réinit. Terrain</span>
-                    </button>
-
-                    <button onclick="reinitialiserCompteursJoues()" class="touch-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-300 font-semibold px-4 rounded-xl border border-slate-700 transition flex items-center gap-2 text-sm" title="Remettre à zéro tous les compteurs de matchs">
-                        <i class="fa-solid fa-rotate-right text-amber-400"></i>
-                        <span>Réinit. Compteurs Joués</span>
+                    <!-- BOUTON D'ANNULATION DE SESSION EN COURS -->
+                    <button id="btn-cancel-session" onclick="annulerSessionEnCours()" class="touch-btn bg-red-950/80 hover:bg-red-900 active:bg-red-950 text-red-200 font-bold px-4 rounded-xl border border-red-800/80 transition flex items-center gap-2 text-sm hidden">
+                        <i class="fa-solid fa-ban text-red-400 text-lg"></i>
+                        <span>Annuler la session</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Équipes Actuellement Sélectionnées sur le Terrain -->
-            <div class="mt-6">
-                <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-display text-pitch-500"></i> Équipes actuellement sur le terrain
-                </h3>
-                <div id="playing-teams" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                    <div class="col-span-full py-10 text-center border-2 border-dashed border-slate-800 rounded-2xl bg-slate-950/40">
-                        <div class="w-12 h-12 rounded-2xl bg-slate-850 flex items-center justify-center mx-auto mb-2 text-slate-600">
-                            <i class="fa-solid fa-shield-halved text-2xl"></i>
+            <!-- Progression de la session -->
+            <div class="mt-6 bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-pitch-500/20 text-pitch-400 border border-pitch-500/30 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-semibold uppercase">Avancement de la session</div>
+                        <div id="session-progress-text" class="text-base font-extrabold text-white">0 / 45 matchs joués</div>
+                    </div>
+                </div>
+
+                <div class="flex-1 max-w-md bg-slate-900 h-4 rounded-full border border-slate-800 overflow-hidden relative">
+                    <div id="session-progress-bar" class="bg-gradient-to-r from-pitch-600 to-pitch-400 h-full w-0 transition-all duration-500"></div>
+                </div>
+
+                <div id="session-status-badge" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 self-start md:self-auto">
+                    Session non démarrée
+                </div>
+            </div>
+
+            <!-- Bannières d'alerte fin de session -->
+            <div id="session-ended-banner" class="mt-6 p-4 bg-emerald-950/80 border-2 border-emerald-500/50 rounded-xl flex items-center justify-between gap-4 hidden">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-flag-checkered text-3xl text-emerald-400"></i>
+                    <div>
+                        <h4 class="font-bold text-white text-base">Fin de séance / Session terminée !</h4>
+                        <p class="text-xs text-emerald-200">Toutes les 10 équipes se sont maintenant rencontrées. Veuillez cliquer sur "Démarrer une nouvelle session" pour rejouer.</p>
+                    </div>
+                </div>
+                <button onclick="demarrerNouvelleSession()" class="touch-btn-sm px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition shrink-0">
+                    Nouvelle Séance
+                </button>
+            </div>
+
+            <!-- Affichage des Terrains A et B -->
+            <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- TERRAIN A -->
+                <div class="bg-slate-950 border-2 border-pitch-500/60 rounded-2xl p-5 shadow-xl relative">
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-pitch-600 text-white font-black flex items-center justify-center text-sm shadow">A</span>
+                            <h3 class="text-lg font-bold text-white">TERRAIN A</h3>
                         </div>
-                        <p class="text-slate-300 font-semibold text-base">Aucune équipe sur le terrain.</p>
-                        <p class="text-xs text-slate-500 mt-1">Cochez les équipes dans la liste ci-dessous puis cliquez sur "Valider & Faire Jouer".</p>
+                        <span class="text-xs font-bold text-pitch-400 bg-pitch-950 px-2.5 py-1 rounded-md border border-pitch-800">Match Direct</span>
+                    </div>
+
+                    <div id="terrain-a-content" class="min-h-[160px] flex flex-col justify-center items-center py-4 text-center">
+                        <p class="text-slate-500 text-sm font-semibold">Aucun match en cours sur le Terrain A.</p>
+                        <p class="text-xs text-slate-600 mt-1">Lancez un tour aléatoire pour attribuer un match.</p>
+                    </div>
+                </div>
+
+                <!-- TERRAIN B -->
+                <div class="bg-slate-950 border-2 border-blue-500/60 rounded-2xl p-5 shadow-xl relative">
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow">B</span>
+                            <h3 class="text-lg font-bold text-white">TERRAIN B</h3>
+                        </div>
+                        <span class="text-xs font-bold text-blue-400 bg-blue-950 px-2.5 py-1 rounded-md border border-blue-800">Match Direct</span>
+                    </div>
+
+                    <div id="terrain-b-content" class="min-h-[160px] flex flex-col justify-center items-center py-4 text-center">
+                        <p class="text-slate-500 text-sm font-semibold">Aucun match en cours sur le Terrain B.</p>
+                        <p class="text-xs text-slate-600 mt-1">Lancez un tour aléatoire pour attribuer un match.</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Grille de Cochage avec Compteur -->
-            <div class="mt-8 pt-6 border-t border-slate-800">
-                <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-list-check text-amber-400"></i> Cocher les équipes à faire jouer
+            <!-- Équipes en attente / Repos -->
+            <div class="mt-6 pt-4 border-t border-slate-800">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-mug-hot text-amber-400"></i> Équipes au repos / En attente durant ce tour
                 </h3>
-                <div id="selection-teams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    <!-- Dynamiquement généré avec cases à cocher et compteurs -->
+                <div id="waiting-teams-container" class="flex flex-wrap gap-2">
+                    <span class="text-xs text-slate-500 italic">Aucune rotation en cours</span>
                 </div>
             </div>
         </section>
 
-        <!-- Étape 3 : Attribution des Points -->
+        <!-- Étape 3 : Saisie Directe des Résultats -->
         <section id="points-section" class="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 shadow-2xl hidden">
             <div class="flex items-center gap-2 text-pitch-500 font-bold text-xs uppercase tracking-wider mb-2">
                 <span class="w-7 h-7 rounded-lg bg-pitch-500/10 flex items-center justify-center text-sm font-extrabold border border-pitch-500/20">3</span>
-                Étape 3 &bull; Résultat des Matchs
+                Étape 3 &bull; Validation des Résultats
             </div>
-            <h2 class="text-2xl font-bold text-white mb-1">Attribution des Points de la Session</h2>
-            <p class="text-slate-400 text-sm mb-6">Ajouter des points directement aux équipes actuellement sélectionnées sur le terrain.</p>
+            <h2 class="text-2xl font-bold text-white mb-1">Attribution des Points des Matchs En Cours</h2>
+            <p class="text-slate-400 text-sm mb-6">Validez le score ou le résultat de chaque terrain pour comptabiliser les points.</p>
 
-            <div id="points-controls" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div id="points-controls" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Populé dynamiquement -->
             </div>
         </section>
@@ -309,8 +369,8 @@
                         <span class="w-7 h-7 rounded-lg bg-pitch-500/10 flex items-center justify-center text-sm font-extrabold border border-pitch-500/20">4</span>
                         Étape 4 &bull; Composition Tactique
                     </div>
-                    <h2 class="text-2xl font-bold text-white">Gestion & Recherche par Équipe</h2>
-                    <p class="text-slate-400 text-sm">Tapez le nom d'un élève dans le champ d'une équipe pour afficher les suggestions et l'ajouter.</p>
+                    <h2 class="text-2xl font-bold text-white">Gestion des 10 Équipes</h2>
+                    <p class="text-slate-400 text-sm">Tapez le nom d'un élève dans le champ d'une équipe pour l'ajouter.</p>
                 </div>
 
                 <button onclick="ajouterNouvelleEquipe()" class="touch-btn bg-slate-800 hover:bg-pitch-600 text-slate-200 hover:text-white font-bold px-5 rounded-xl border border-slate-700 hover:border-pitch-500 transition shadow-md flex items-center justify-center gap-2 text-sm">
@@ -324,7 +384,7 @@
             </div>
         </section>
 
-        <!-- Étape 5 : Classement -->
+        <!-- Étape 5 : Classement Général -->
         <section id="leaderboard-section" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
                 <div>
@@ -333,7 +393,7 @@
                         Étape 5 &bull; Palmarès
                     </div>
                     <h2 class="text-2xl font-bold text-white">Classement Général des Équipes</h2>
-                    <p class="text-slate-400 text-sm">Cumul automatique des points obtenus par chaque équipe.</p>
+                    <p class="text-slate-400 text-sm">Cumul automatique des points obtenus au fil des séances.</p>
                 </div>
                 
                 <div class="flex flex-wrap sm:flex-nowrap items-stretch sm:items-center gap-3 w-full sm:w-auto no-print">
@@ -360,14 +420,15 @@
                         <tr class="border-b border-slate-800 text-slate-400 font-bold text-xs uppercase tracking-wider bg-slate-950/60">
                             <th class="py-4 px-6 rounded-l-xl">Rang</th>
                             <th class="py-4 px-6">Équipe</th>
-                            <th class="py-4 px-6">Matchs Joués</th>
+                            <th class="py-4 px-6">Séances Jouées</th>
+                            <th class="py-4 px-6">Matchs Joués (Session)</th>
                             <th class="py-4 px-6">Effectif</th>
                             <th class="py-4 px-6 text-right rounded-r-xl">Total Points</th>
                         </tr>
                     </thead>
                     <tbody id="leaderboard-body" class="divide-y divide-slate-800/60">
                         <tr>
-                            <td colspan="5" class="py-12 text-center text-slate-500 font-medium">Aucune équipe à afficher pour le moment.</td>
+                            <td colspan="6" class="py-12 text-center text-slate-500 font-medium">Aucune équipe à afficher pour le moment.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -383,7 +444,7 @@
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
             <h3 class="text-xl font-bold text-white">Réinitialiser tout le tournoi ?</h3>
-            <p class="text-sm text-slate-400">Cette action va supprimer l'intégralité des élèves, des équipes, des points et de l'historique de votre navigateur. Voulez-vous continuer ?</p>
+            <p class="text-sm text-slate-400">Cette action va supprimer l'intégralité des élèves, des équipes, des points et des sessions. Voulez-vous continuer ?</p>
             <div class="flex items-center justify-end gap-3 pt-2">
                 <button onclick="fermerResetModal()" class="touch-btn-sm px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs">Annuler</button>
                 <button onclick="effectuerResetComplet()" class="touch-btn-sm px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-red-600/30">Oui, tout effacer</button>
@@ -398,44 +459,36 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'FOOTBALL_TOURNAMENT_APP_DATA_V3';
+        const STORAGE_KEY = 'FOOTBALL_TOURNAMENT_APP_DATA_V4';
 
-        // Structure d'une équipe: { id, name, playCount: 0, checked: false, points: 0 }
-        let players = [];      // { id, name, teamId }
-        let teams = [];        // { id, name, playCount, checked, points }
-        let currentPlayingTeamIds = []; 
+        let players = [];              // { id, name, teamId }
+        let teams = [];                // { id, name, sessionsPlayed, points, matchesPlayedInSession }
+        let totalSessionsPlayed = 0;   // Nombre total de séances jouées
 
-        // Calendrier ajusté (Septembre 2026 — 30 Mars 2027)
-        const PLANNING_MATCHS = [
-            // Phase 1 : Mise à niveau & Poules d'origine
-            { date: "2026-09-29", jour: "Mardi 29 Septembre (A)", teamIds: [6, 7, 8, 9, 10] },
-            { date: "2026-10-08", jour: "Jeudi 8 Octobre (B)", teamIds: [1, 2, 3, 4, 5] },
-            { date: "2026-10-13", jour: "Mardi 13 Octobre (A)", teamIds: [6, 7, 8, 9, 10] },
-            { date: "2026-11-05", jour: "Jeudi 5 Novembre (B)", teamIds: [1, 2, 3, 4, 5] },
-            { date: "2026-11-10", jour: "Mardi 10 Novembre (A)", teamIds: [6, 7, 8, 9, 10] },
+        // Session State
+        let sessionActive = false;
+        let sessionMatches = [];       // Liste de tous les matchs { teamA, teamB, played: false }
+        let currentRotation = {
+            terrainA: null,            // { teamA, teamB }
+            terrainB: null,            // { teamA, teamB }
+            playedA: false,
+            playedB: false
+        };
 
-            // Phase 2 : Premier brassage
-            { date: "2026-11-19", jour: "Jeudi 19 Novembre (B)", teamIds: [2, 4, 6, 8, 10] },
-            { date: "2026-11-24", jour: "Mardi 24 Novembre (A)", teamIds: [1, 3, 5, 7, 9] },
-            { date: "2026-12-03", jour: "Jeudi 3 Décembre (B)", teamIds: [2, 4, 6, 8, 10] },
-            { date: "2026-12-08", jour: "Mardi 8 Décembre (A)", teamIds: [1, 3, 5, 7, 9] },
-            { date: "2026-12-17", jour: "Jeudi 17 Décembre (B)", teamIds: [2, 4, 6, 8, 10] },
-            { date: "2027-01-05", jour: "Mardi 5 Janvier (A)", teamIds: [1, 3, 5, 7, 9] },
-
-            // Phase 3 : Second brassage
-            { date: "2027-01-14", jour: "Jeudi 14 Janvier (B)", teamIds: [2, 4, 7, 8, 9] },
-            { date: "2027-01-19", jour: "Mardi 19 Janvier (A)", teamIds: [1, 3, 5, 6, 10] },
-            { date: "2027-01-28", jour: "Jeudi 28 Janvier (B)", teamIds: [2, 4, 7, 8, 9] },
-            { date: "2027-02-02", jour: "Mardi 2 Février (A)", teamIds: [1, 3, 5, 6, 10] },
-            { date: "2027-02-25", jour: "Jeudi 25 Février (B)", teamIds: [2, 4, 7, 8, 9] },
-            { date: "2027-03-02", jour: "Mardi 2 Mars (A)", teamIds: [1, 3, 5, 6, 10] },
-
-            // Phase 4 : Croisements finaux & Clôture
-            { date: "2027-03-11", jour: "Jeudi 11 Mars (B)", teamIds: [2, 4, 6, 7, 10] },
-            { date: "2027-03-16", jour: "Mardi 16 Mars (A)", teamIds: [1, 3, 5, 8, 9] },
-            { date: "2027-03-25", jour: "Jeudi 25 Mars (B)", teamIds: [2, 4, 6, 7, 10] },
-            { date: "2027-03-30", jour: "Mardi 30 Mars (A)", teamIds: [1, 3, 5, 8, 9] }
-        ];
+        // Initialisation par défaut de 10 équipes
+        function initDefaultTeams() {
+            if (teams.length === 0) {
+                for (let i = 1; i <= 10; i++) {
+                    teams.push({
+                        id: i,
+                        name: `Équipe ${i}`,
+                        sessionsPlayed: 0,
+                        points: 0,
+                        matchesPlayedInSession: 0
+                    });
+                }
+            }
+        }
 
         let lastTouchEnd = 0;
         document.addEventListener('touchend', function (event) {
@@ -474,38 +527,172 @@
             }, 3200);
         }
 
-        // Fonction pour déclencher l'impression iOS (AirPrint)
         function imprimerClassement() {
             window.print();
         }
 
-        // Auto-sélection basée sur la date/session courante
-        function selectionnerSelonPlanning() {
-            const todayStr = new Date().toISOString().slice(0, 10);
-            
-            // Cherche le match d'aujourd'hui ou le tout premier disponible à partir d'aujourd'hui
-            let match = PLANNING_MATCHS.find(m => m.date >= todayStr);
-            if (!match) {
-                match = PLANNING_MATCHS[0];
-            }
-
-            teams.forEach(t => {
-                t.checked = match.teamIds.includes(t.id);
-            });
-
+        // --- GESTION DE LA SESSION ET DES RENCONTRES ---
+        function reinitialiserSeancesJouees() {
+            totalSessionsPlayed = 0;
+            teams.forEach(t => t.sessionsPlayed = 0);
             sauvegarderAutomatiquement();
-            renderSelectionGrid();
-            showToast(`Équipes cochées pour ${match.jour} !`, "success");
+            renderAll();
+            showToast("Nombre de séances jouées réinitialisé à 0.", "info");
         }
 
+        // Algorithme Round-Robin pour 10 équipes = 45 matchs
+        function demarrerNouvelleSession() {
+            if (teams.length < 2) {
+                showToast("Il faut au moins 2 équipes pour démarrer une session.", "warning");
+                return;
+            }
+
+            totalSessionsPlayed++;
+            teams.forEach(t => {
+                t.sessionsPlayed = (t.sessionsPlayed || 0) + 1;
+                t.matchesPlayedInSession = 0;
+            });
+
+            // Génération de tous les paires de matchs uniques (Round-Robin)
+            sessionMatches = [];
+            for (let i = 0; i < teams.length; i++) {
+                for (let j = i + 1; j < teams.length; j++) {
+                    sessionMatches.push({
+                        id: `${teams[i].id}-${teams[j].id}`,
+                        teamA: teams[i].id,
+                        teamB: teams[j].id,
+                        played: false
+                    });
+                }
+            }
+
+            // Mélange aléatoire des matchs
+            shuffleArray(sessionMatches);
+
+            sessionActive = true;
+            currentRotation = { terrainA: null, terrainB: null, playedA: false, playedB: false };
+
+            sauvegarderAutomatiquement();
+            renderAll();
+            showToast(`Nouvelle session démarrée ! (${sessionMatches.length} matchs à jouer)`, "success");
+
+            // Lancer le premier tour automatiquement
+            lancerProchainTourAleatoire();
+        }
+
+        function annulerSessionEnCours() {
+            if (!sessionActive) return;
+
+            if (confirm("Voulez-vous vraiment annuler la session en cours ? L'avancement des matchs de cette session sera réinitialisé.")) {
+                sessionActive = false;
+                sessionMatches = [];
+                currentRotation = { terrainA: null, terrainB: null, playedA: false, playedB: false };
+
+                sauvegarderAutomatiquement();
+                renderAll();
+                showToast("La session en cours a été annulée.", "info");
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function lancerProchainTourAleatoire() {
+            if (!sessionActive) {
+                showToast("Veuillez d'abord démarrer une nouvelle session.", "warning");
+                return;
+            }
+
+            const unplayed = sessionMatches.filter(m => !m.played);
+            if (unplayed.length === 0) {
+                showToast("Fin de séance ! Tous les matchs de la session ont été joués.", "info");
+                return;
+            }
+
+            // Sélectionner jusqu'à 2 matchs n'impliquant pas les mêmes équipes
+            let matchA = null;
+            let matchB = null;
+
+            for (let i = 0; i < unplayed.length; i++) {
+                const m = unplayed[i];
+                if (!matchA) {
+                    matchA = m;
+                } else if (!matchB) {
+                    // Vérifier si les équipes du match B sont distinctes du match A
+                    if (m.teamA !== matchA.teamA && m.teamA !== matchA.teamB &&
+                        m.teamB !== matchA.teamA && m.teamB !== matchA.teamB) {
+                        matchB = m;
+                        break;
+                    }
+                }
+            }
+
+            currentRotation = {
+                terrainA: matchA,
+                terrainB: matchB,
+                playedA: false,
+                playedB: false
+            };
+
+            sauvegarderAutomatiquement();
+            renderTerrains();
+            showToast("Prochain tour tiré au sort !", "success");
+        }
+
+        function enregistrerResultatTerrain(terrain, winnerTeamId, loserTeamId, isDraw = false) {
+            const match = currentRotation[terrain === 'A' ? 'terrainA' : 'terrainB'];
+            if (!match || match.played) return;
+
+            match.played = true;
+            const matchInSession = sessionMatches.find(m => m.id === match.id);
+            if (matchInSession) matchInSession.played = true;
+
+            const tA = teams.find(t => t.id === match.teamA);
+            const tB = teams.find(t => t.id === match.teamB);
+
+            if (tA) tA.matchesPlayedInSession = (tA.matchesPlayedInSession || 0) + 1;
+            if (tB) tB.matchesPlayedInSession = (tB.matchesPlayedInSession || 0) + 1;
+
+            if (isDraw) {
+                if (tA) tA.points = (tA.points || 0) + 1;
+                if (tB) tB.points = (tB.points || 0) + 1;
+                showToast(`Match Nul enregistré sur le Terrain ${terrain} (+1 pt chacun)`, "info");
+            } else {
+                const winner = teams.find(t => t.id === winnerTeamId);
+                if (winner) winner.points = (winner.points || 0) + 3;
+                showToast(`Victoire de ${winner ? winner.name : 'l\'équipe'} sur Terrain ${terrain} (+3 pts)`, "success");
+            }
+
+            if (terrain === 'A') currentRotation.playedA = true;
+            if (terrain === 'B') currentRotation.playedB = true;
+
+            // Vérification si la session complète est terminée
+            const remainingUnplayed = sessionMatches.filter(m => !m.played).length;
+            if (remainingUnplayed === 0) {
+                sessionActive = false;
+                showToast("🎉 Fin de séance ! Toutes les équipes se sont rencontrées !", "success");
+            }
+
+            sauvegarderAutomatiquement();
+            renderAll();
+        }
+
+        // --- PERSISTENCE LOCALSTORAGE & EXPORT ---
         function sauvegarderAutomatiquement() {
             try {
                 const payload = {
-                    version: 3,
+                    version: 4,
                     timestamp: new Date().toISOString(),
                     players: players,
                     teams: teams,
-                    currentPlayingTeamIds: currentPlayingTeamIds
+                    totalSessionsPlayed: totalSessionsPlayed,
+                    sessionActive: sessionActive,
+                    sessionMatches: sessionMatches,
+                    currentRotation: currentRotation
                 };
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
             } catch (e) {
@@ -520,14 +707,11 @@
                     const parsed = JSON.parse(dataRaw);
                     if (parsed && Array.isArray(parsed.players) && Array.isArray(parsed.teams)) {
                         players = parsed.players;
-                        teams = parsed.teams.map(t => ({
-                            id: t.id,
-                            name: t.name,
-                            playCount: t.playCount || 0,
-                            checked: !!t.checked,
-                            points: t.points || 0
-                        }));
-                        currentPlayingTeamIds = parsed.currentPlayingTeamIds || [];
+                        teams = parsed.teams;
+                        totalSessionsPlayed = parsed.totalSessionsPlayed || 0;
+                        sessionActive = !!parsed.sessionActive;
+                        sessionMatches = parsed.sessionMatches || [];
+                        currentRotation = parsed.currentRotation || { terrainA: null, terrainB: null };
                         return true;
                     }
                 }
@@ -548,7 +732,10 @@
                 exportDate: new Date().toISOString(),
                 players: players,
                 teams: teams,
-                currentPlayingTeamIds: currentPlayingTeamIds
+                totalSessionsPlayed: totalSessionsPlayed,
+                sessionActive: sessionActive,
+                sessionMatches: sessionMatches,
+                currentRotation: currentRotation
             };
 
             const jsonStr = JSON.stringify(dataToExport, null, 2);
@@ -577,14 +764,11 @@
                     const parsed = JSON.parse(e.target.result);
                     if (parsed && Array.isArray(parsed.players) && Array.isArray(parsed.teams)) {
                         players = parsed.players;
-                        teams = parsed.teams.map(t => ({
-                            id: t.id,
-                            name: t.name,
-                            playCount: t.playCount || 0,
-                            checked: !!t.checked,
-                            points: t.points || 0
-                        }));
-                        currentPlayingTeamIds = parsed.currentPlayingTeamIds || [];
+                        teams = parsed.teams;
+                        totalSessionsPlayed = parsed.totalSessionsPlayed || 0;
+                        sessionActive = !!parsed.sessionActive;
+                        sessionMatches = parsed.sessionMatches || [];
+                        currentRotation = parsed.currentRotation || { terrainA: null, terrainB: null };
                         
                         sauvegarderAutomatiquement();
                         renderAll();
@@ -612,13 +796,18 @@
         function effectuerResetComplet() {
             players = [];
             teams = [];
-            currentPlayingTeamIds = [];
+            totalSessionsPlayed = 0;
+            sessionActive = false;
+            sessionMatches = [];
+            currentRotation = { terrainA: null, terrainB: null };
             localStorage.removeItem(STORAGE_KEY);
+            initDefaultTeams();
             fermerResetModal();
             renderAll();
             showToast("Toutes les données ont été réinitialisées.", "info");
         }
 
+        // --- PARSING EXCEL / CSV ---
         function handleFileSelect(event) {
             const file = event.target.files[0];
             const labelText = document.getElementById('file-label-text');
@@ -676,18 +865,7 @@
                         }
                     });
 
-                    if (teams.length === 0) {
-                        for (let i = 1; i <= 10; i++) {
-                            teams.push({
-                                id: i,
-                                name: `Équipe ${i}`,
-                                playCount: 0,
-                                checked: false,
-                                points: 0
-                            });
-                        }
-                    }
-
+                    initDefaultTeams();
                     showToast(`${countAdded} élève(s) ajouté(s) à la réserve !`, "success");
                     renderAll();
                 } catch (err) {
@@ -696,49 +874,6 @@
                 }
             };
             reader.readAsArrayBuffer(file);
-        }
-
-        function toggleTeamSelection(teamId) {
-            const team = teams.find(t => t.id === teamId);
-            if (team) {
-                team.checked = !team.checked;
-                sauvegarderAutomatiquement();
-                renderSelectionGrid();
-            }
-        }
-
-        function validerSelectionMatch() {
-            const selectedTeams = teams.filter(t => t.checked);
-            
-            if (selectedTeams.length === 0) {
-                showToast("Veuillez cocher au moins une équipe à faire jouer.", "warning");
-                return;
-            }
-
-            selectedTeams.forEach(t => {
-                t.playCount = (t.playCount || 0) + 1;
-            });
-
-            currentPlayingTeamIds = selectedTeams.map(t => t.id);
-
-            sauvegarderAutomatiquement();
-            renderAll();
-            showToast(`${selectedTeams.length} équipe(s) envoyée(s) sur le terrain (+1 match au compteur) !`, "success");
-        }
-
-        function reinitialiserEquipesTerrain() {
-            currentPlayingTeamIds = [];
-            teams.forEach(t => t.checked = false);
-            sauvegarderAutomatiquement();
-            renderAll();
-            showToast("Le terrain et la sélection ont été réinitialisés.", "info");
-        }
-
-        function reinitialiserCompteursJoues() {
-            teams.forEach(t => t.playCount = 0);
-            sauvegarderAutomatiquement();
-            renderAll();
-            showToast("Tous les compteurs de matchs ont été réinitialisés à 0.", "info");
         }
 
         function reinitialiserTotalPoints() {
@@ -753,9 +888,9 @@
             teams.push({
                 id: newId,
                 name: `Équipe ${newId}`,
-                playCount: 0,
-                checked: false,
-                points: 0
+                sessionsPlayed: 0,
+                points: 0,
+                matchesPlayedInSession: 0
             });
             showToast(`Nouvelle équipe "${teams[teams.length - 1].name}" ajoutée !`, "success");
             renderAll();
@@ -778,8 +913,6 @@
             });
 
             teams = teams.filter(t => t.id !== teamId);
-            currentPlayingTeamIds = currentPlayingTeamIds.filter(id => id !== teamId);
-
             showToast(`L'équipe "${team.name}" a été supprimée.`, "info");
             renderAll();
         }
@@ -846,20 +979,10 @@
             }
         }
 
-        function ajouterPointsEquipe(teamId, pts) {
-            const team = teams.find(t => t.id === teamId);
-            if (team) {
-                team.points = (team.points || 0) + pts;
-                sauvegarderAutomatiquement();
-                renderLeaderboard();
-                showToast(`+${pts} pt(s) attribué(s) à l'équipe ${team.name} !`, pts === 0 ? "info" : "success");
-            }
-        }
-
+        // --- RENDERING / AFFICHAGE ---
         function renderAll() {
             sauvegarderAutomatiquement();
-            renderSelectionGrid();
-            renderPlayingTeams();
+            renderTerrains();
             renderAllTeams();
             renderLeaderboard();
             updateStatsBadges();
@@ -870,123 +993,167 @@
             const unassigned = players.filter(p => p.teamId === null).length;
             document.getElementById('unassigned-players-count').textContent = unassigned;
             document.getElementById('total-teams-count').textContent = teams.length;
+            document.getElementById('total-sessions-played').textContent = totalSessionsPlayed;
         }
 
-        function renderSelectionGrid() {
-            const grid = document.getElementById('selection-teams-grid');
-            if (teams.length === 0) {
-                grid.innerHTML = `<p class="col-span-full text-slate-500 text-sm text-center py-4">Aucune équipe créée pour le moment.</p>`;
-                return;
-            }
-
-            grid.innerHTML = '';
-            teams.forEach(team => {
-                const count = team.playCount || 0;
-                let badgeColor = 'bg-slate-800 text-slate-400 border-slate-700';
-                
-                if (count === 0) {
-                    badgeColor = 'bg-red-500/20 text-red-400 border-red-500/40 font-bold';
-                } else if (count === 1) {
-                    badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
-                } else {
-                    badgeColor = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
-                }
-
-                grid.innerHTML += `
-                    <div onclick="toggleTeamSelection(${team.id})" class="touch-btn cursor-pointer p-4 rounded-xl border ${team.checked ? 'border-pitch-500 bg-pitch-950/40 shadow-lg shadow-pitch-950/50' : 'border-slate-800 bg-slate-950/60 hover:bg-slate-850'} transition flex items-center justify-between">
-                        <div class="flex items-center gap-3 truncate">
-                            <input type="checkbox" ${team.checked ? 'checked' : ''} class="w-5 h-5 rounded border-slate-700 text-pitch-600 focus:ring-pitch-500 pointer-events-none">
-                            <span class="font-bold text-sm text-slate-200 truncate">${team.name}</span>
-                        </div>
-                        <span class="text-xs px-2.5 py-1 rounded-lg border ${badgeColor} shrink-0 flex items-center gap-1" title="${count === 0 ? 'N\'a pas encore joué !' : 'Nombre de fois sélectionnée'}">
-                            <i class="fa-solid fa-gamepad text-[10px]"></i>
-                            ${count === 0 ? 'Jamais joué' : count + ' match(s)'}
-                        </span>
-                    </div>
-                `;
-            });
-        }
-
-        function renderPlayingTeams() {
-            const container = document.getElementById('playing-teams');
+        function renderTerrains() {
+            const terrainAEl = document.getElementById('terrain-a-content');
+            const terrainBEl = document.getElementById('terrain-b-content');
             const pointsSection = document.getElementById('points-section');
             const pointsControls = document.getElementById('points-controls');
+            const progressText = document.getElementById('session-progress-text');
+            const progressBar = document.getElementById('session-progress-bar');
+            const statusBadge = document.getElementById('session-status-badge');
+            const endedBanner = document.getElementById('session-ended-banner');
+            const btnNextRound = document.getElementById('btn-next-round');
+            const btnCancelSession = document.getElementById('btn-cancel-session');
 
-            const selectedTeams = teams.filter(t => currentPlayingTeamIds.includes(t.id));
+            const totalMatches = sessionMatches.length;
+            const playedMatches = sessionMatches.filter(m => m.played).length;
 
-            if (selectedTeams.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full py-10 text-center border-2 border-dashed border-slate-800 rounded-2xl bg-slate-950/40">
-                        <div class="w-12 h-12 rounded-2xl bg-slate-850 flex items-center justify-center mx-auto mb-2 text-slate-600">
-                            <i class="fa-solid fa-shield-halved text-2xl"></i>
-                        </div>
-                        <p class="text-slate-300 font-semibold text-base">Aucune équipe sur le terrain.</p>
-                        <p class="text-xs text-slate-500 mt-1">Cochez les équipes dans la liste ci-dessous puis cliquez sur "Valider & Faire Jouer".</p>
-                    </div>
-                `;
+            progressText.textContent = `${playedMatches} / ${totalMatches || 45} matchs joués`;
+            const pct = totalMatches > 0 ? (playedMatches / totalMatches) * 100 : 0;
+            progressBar.style.width = `${pct}%`;
+
+            if (!sessionActive && totalMatches > 0 && playedMatches === totalMatches) {
+                statusBadge.textContent = "Session Terminée";
+                statusBadge.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-900/80 text-emerald-300 border border-emerald-700";
+                endedBanner.classList.remove('hidden');
+                if (btnNextRound) btnNextRound.disabled = true;
+                if (btnCancelSession) btnCancelSession.classList.add('hidden');
+            } else if (sessionActive) {
+                statusBadge.textContent = "Session En Cours";
+                statusBadge.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-900/80 text-amber-300 border border-amber-700";
+                endedBanner.classList.add('hidden');
+                if (btnNextRound) btnNextRound.disabled = false;
+                if (btnCancelSession) btnCancelSession.classList.remove('hidden');
+            } else {
+                statusBadge.textContent = "Session non démarrée";
+                statusBadge.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700";
+                endedBanner.classList.add('hidden');
+                if (btnCancelSession) btnCancelSession.classList.add('hidden');
+            }
+
+            // Terrain A
+            renderSingleTerrain(terrainAEl, currentRotation.terrainA, 'A', currentRotation.playedA);
+            // Terrain B
+            renderSingleTerrain(terrainBEl, currentRotation.terrainB, 'B', currentRotation.playedB);
+
+            // Points section controls
+            pointsControls.innerHTML = '';
+            let hasActiveMatches = false;
+
+            if (currentRotation.terrainA && !currentRotation.playedA) {
+                hasActiveMatches = true;
+                pointsControls.innerHTML += createPointsCard(currentRotation.terrainA, 'A');
+            }
+            if (currentRotation.terrainB && !currentRotation.playedB) {
+                hasActiveMatches = true;
+                pointsControls.innerHTML += createPointsCard(currentRotation.terrainB, 'B');
+            }
+
+            if (hasActiveMatches) {
+                pointsSection.classList.remove('hidden');
+            } else {
                 pointsSection.classList.add('hidden');
+            }
+
+            // Waiting teams calculation
+            renderWaitingTeams();
+        }
+
+        function renderSingleTerrain(container, match, terrainName, isPlayed) {
+            if (!match) {
+                container.innerHTML = `
+                    <p class="text-slate-500 text-sm font-semibold">Aucun match attribué sur Terrain ${terrainName}.</p>
+                    <p class="text-xs text-slate-600 mt-1">Cliquez sur "Lancer le prochain tour aléatoire".</p>
+                `;
                 return;
             }
 
-            container.innerHTML = '';
-            pointsControls.innerHTML = '';
+            const teamA = teams.find(t => t.id === match.teamA);
+            const teamB = teams.find(t => t.id === match.teamB);
 
-            selectedTeams.forEach(team => {
-                const teamPlayers = players.filter(p => p.teamId === team.id);
-                let playersHtml = teamPlayers.map(p => `
-                    <li class="flex items-center gap-2 text-xs py-1.5 text-slate-200">
-                        <i class="fa-solid fa-user text-pitch-500 text-xs"></i>
-                        <span class="font-bold">${p.name}</span>
-                    </li>
-                `).join('');
+            const playersA = players.filter(p => p.teamId === match.teamA).map(p => p.name).join(', ') || 'Aucun joueur';
+            const playersB = players.filter(p => p.teamId === match.teamB).map(p => p.name).join(', ') || 'Aucun joueur';
 
-                if (teamPlayers.length === 0) {
-                    playersHtml = `<li class="text-xs text-slate-500 italic py-2">Équipe vide</li>`;
-                }
-
-                container.innerHTML += `
-                    <div class="bg-slate-950 border-2 border-pitch-500/80 rounded-2xl p-5 shadow-xl relative overflow-hidden flex flex-col justify-between">
-                        <div class="absolute top-0 right-0 bg-pitch-600 text-white text-[10px] font-black tracking-wider uppercase px-3 py-1 rounded-bl-xl">
-                            SUR LE TERRAIN
-                        </div>
-                        <div>
-                            <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-800">
-                                <i class="fa-solid fa-shield-cat text-pitch-500 text-xl"></i>
-                                <div>
-                                    <h3 class="font-extrabold text-white text-lg truncate">${team.name}</h3>
-                                    <p class="text-[10px] text-pitch-400 font-semibold">${team.playCount || 0} match(s) joué(s)</p>
-                                </div>
-                            </div>
-                            <ul class="space-y-1 mb-4">
-                                ${playersHtml}
-                            </ul>
-                        </div>
-                        <div class="text-xs text-slate-400 border-t border-slate-900 pt-3 flex justify-between items-center">
-                            <span>Effectif</span>
-                            <span class="font-bold text-white bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">${teamPlayers.length} joueur(s)</span>
-                        </div>
+            container.innerHTML = `
+                <div class="w-full flex items-center justify-between gap-2 my-2">
+                    <div class="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 text-center">
+                        <div class="font-extrabold text-pitch-400 text-base truncate">${teamA ? teamA.name : 'Équipe A'}</div>
+                        <div class="text-[10px] text-slate-400 truncate mt-0.5">${playersA}</div>
                     </div>
-                `;
-
-                pointsControls.innerHTML += `
-                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-lg">
-                        <div class="font-extrabold text-white mb-4 text-center text-base truncate">${team.name}</div>
-                        <div class="grid grid-cols-3 gap-2">
-                            <button onclick="ajouterPointsEquipe(${team.id}, 3)" class="touch-btn bg-pitch-600 hover:bg-pitch-500 active:bg-pitch-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1 shadow-md">
-                                <i class="fa-solid fa-trophy text-xs"></i> +3 (Victoire)
-                            </button>
-                            <button onclick="ajouterPointsEquipe(${team.id}, 1)" class="touch-btn bg-accent-600 hover:bg-accent-500 active:bg-accent-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1 shadow-md">
-                                <i class="fa-solid fa-handshake text-xs"></i> +1 (Nul)
-                            </button>
-                            <button onclick="ajouterPointsEquipe(${team.id}, 0)" class="touch-btn bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1 shadow-md">
-                                <i class="fa-solid fa-xmark text-xs"></i> +0 (Perdu)
-                            </button>
-                        </div>
+                    <div class="px-3 py-1 font-black text-amber-400 text-sm bg-slate-900 rounded-lg border border-slate-800">VS</div>
+                    <div class="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 text-center">
+                        <div class="font-extrabold text-blue-400 text-base truncate">${teamB ? teamB.name : 'Équipe B'}</div>
+                        <div class="text-[10px] text-slate-400 truncate mt-0.5">${playersB}</div>
                     </div>
-                `;
-            });
+                </div>
+                ${isPlayed ? `<div class="mt-2 text-xs font-bold text-emerald-400 flex items-center justify-center gap-1"><i class="fa-solid fa-circle-check"></i> Résultat enregistré pour ce tour</div>` : ''}
+            `;
+        }
 
-            pointsSection.classList.remove('hidden');
+        function createPointsCard(match, terrainName) {
+            const teamA = teams.find(t => t.id === match.teamA);
+            const teamB = teams.find(t => t.id === match.teamB);
+
+            return `
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold px-2.5 py-1 bg-slate-900 text-slate-300 rounded-md border border-slate-800">Terrain ${terrainName}</span>
+                        <span class="text-xs text-amber-400 font-semibold">Match en cours</span>
+                    </div>
+
+                    <div class="flex items-center justify-around font-extrabold text-white text-base mb-4 text-center">
+                        <span class="text-pitch-400">${teamA ? teamA.name : ''}</span>
+                        <span class="text-xs text-slate-500">VS</span>
+                        <span class="text-blue-400">${teamB ? teamB.name : ''}</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="enregistrerResultatTerrain('${terrainName}', ${match.teamA}, ${match.teamB}, false)" class="touch-btn bg-pitch-600 hover:bg-pitch-500 active:bg-pitch-700 text-white text-xs font-bold rounded-xl transition flex flex-col items-center justify-center py-2 shadow-md">
+                            <span>Gagnant</span>
+                            <span class="text-[10px] opacity-80">${teamA ? teamA.name : ''}</span>
+                        </button>
+
+                        <button onclick="enregistrerResultatTerrain('${terrainName}', null, null, true)" class="touch-btn bg-accent-600 hover:bg-accent-500 active:bg-accent-700 text-white text-xs font-bold rounded-xl transition flex flex-col items-center justify-center py-2 shadow-md">
+                            <span>Match Nul</span>
+                            <span class="text-[10px] opacity-80">+1 pt chacun</span>
+                        </button>
+
+                        <button onclick="enregistrerResultatTerrain('${terrainName}', ${match.teamB}, ${match.teamA}, false)" class="touch-btn bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-bold rounded-xl transition flex flex-col items-center justify-center py-2 shadow-md">
+                            <span>Gagnant</span>
+                            <span class="text-[10px] opacity-80">${teamB ? teamB.name : ''}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderWaitingTeams() {
+            const container = document.getElementById('waiting-teams-container');
+            const activeTeamIds = [];
+
+            if (currentRotation.terrainA) {
+                activeTeamIds.push(currentRotation.terrainA.teamA, currentRotation.terrainA.teamB);
+            }
+            if (currentRotation.terrainB) {
+                activeTeamIds.push(currentRotation.terrainB.teamA, currentRotation.terrainB.teamB);
+            }
+
+            const waiting = teams.filter(t => !activeTeamIds.includes(t.id));
+
+            if (waiting.length === 0 || activeTeamIds.length === 0) {
+                container.innerHTML = `<span class="text-xs text-slate-500 italic">Aucune rotation active pour le moment</span>`;
+                return;
+            }
+
+            container.innerHTML = waiting.map(t => `
+                <span class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-950 text-slate-300 border border-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield text-slate-500 text-[10px]"></i>
+                    ${t.name}
+                </span>
+            `).join('');
         }
 
         function renderAllTeams() {
@@ -1027,7 +1194,7 @@
                                 />
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs font-bold text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 shrink-0">
-                                        ${teamPlayers.length}/5
+                                        ${teamPlayers.length}
                                     </span>
                                     <button onclick="supprimerEquipe(${team.id})" title="Supprimer l'équipe" class="touch-btn-sm text-slate-600 hover:text-red-400 transition flex items-center justify-center">
                                         <i class="fa-solid fa-trash-can text-sm"></i>
@@ -1065,7 +1232,7 @@
             const filterQuery = filterInput ? filterInput.value.toLowerCase().trim() : '';
 
             if (teams.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-500 font-medium">Aucune équipe disponible.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="py-12 text-center text-slate-500 font-medium">Aucune équipe disponible.</td></tr>`;
                 return;
             }
 
@@ -1074,7 +1241,8 @@
                 return {
                     id: team.id,
                     name: team.name,
-                    playCount: team.playCount || 0,
+                    sessionsPlayed: team.sessionsPlayed || 0,
+                    matchesPlayedInSession: team.matchesPlayedInSession || 0,
                     playerCount: teamPlayers.length,
                     points: team.points || 0
                 };
@@ -1084,7 +1252,7 @@
             filtered.sort((a, b) => b.points - a.points);
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-500 font-medium">Aucune équipe ne correspond à votre recherche.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="py-12 text-center text-slate-500 font-medium">Aucune équipe ne correspond à votre recherche.</td></tr>`;
                 return;
             }
 
@@ -1104,7 +1272,8 @@
                                 ${t.name}
                             </span>
                         </td>
-                        <td class="py-4 px-6 text-slate-300 text-sm font-semibold">${t.playCount} match(s)</td>
+                        <td class="py-4 px-6 text-amber-400 text-sm font-bold">${t.sessionsPlayed} séance(s)</td>
+                        <td class="py-4 px-6 text-slate-300 text-sm font-semibold">${t.matchesPlayedInSession} match(s)</td>
                         <td class="py-4 px-6 text-slate-400 text-sm font-medium">${t.playerCount} joueur(s)</td>
                         <td class="py-4 px-6 text-right font-black text-pitch-400 text-lg">${t.points} <span class="text-xs font-medium text-slate-500">pts</span></td>
                     </tr>
@@ -1119,6 +1288,7 @@
         });
 
         window.onload = function() {
+            initDefaultTeams();
             const hasRestored = chargerDepuisLocalStorage();
             if (hasRestored) {
                 showToast("Dernière session restaurée automatiquement.", "info");
