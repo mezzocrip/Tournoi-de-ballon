@@ -78,12 +78,42 @@
             min-height: 40px;
             min-width: 40px;
         }
+
+        /* Style d'impression optimisé */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .print-hidden {
+                display: none !important;
+            }
+            section {
+                border: none !important;
+                box-shadow: none !important;
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+            }
+            th, td {
+                border: 1px solid #cbd5e1 !important;
+                color: black !important;
+                padding: 10px 12px !important;
+            }
+            th {
+                background-color: #f1f5f9 !important;
+            }
+        }
     </style>
 </head>
 <body class="font-sans min-h-full flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden pb-12">
 
     <!-- En-tête / Barre de navigation -->
-    <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-xl">
+    <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-xl print-hidden">
         <div class="max-w-[1600px] mx-auto px-6 py-4 flex flex-col xl:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-2xl bg-pitch-600 flex items-center justify-center text-white shadow-lg shadow-pitch-600/30">
@@ -144,7 +174,7 @@
     <main class="flex-1 max-w-[1600px] w-full mx-auto px-6 py-6 space-y-8">
 
         <!-- Étape 1 : Réserve Élèves -->
-        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden print-hidden">
             <div class="flex items-center gap-2 text-pitch-500 font-bold text-xs uppercase tracking-wider mb-2">
                 <span class="w-7 h-7 rounded-lg bg-pitch-500/10 flex items-center justify-center text-sm font-extrabold border border-pitch-500/20">1</span>
                 Étape 1 &bull; Réserve Élèves
@@ -169,7 +199,7 @@
         </section>
 
         <!-- Étape 2 : Sélection Manuelle des Équipes -->
-        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl print-hidden">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-800">
                 <div>
                     <div class="flex items-center gap-2 text-accent-500 font-bold text-xs uppercase tracking-wider mb-2">
@@ -216,7 +246,7 @@
         </section>
 
         <!-- Étape 3 : Composition Tactique -->
-        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl print-hidden">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
                 <div>
                     <div class="flex items-center gap-2 text-pitch-500 font-bold text-xs uppercase tracking-wider mb-2">
@@ -242,21 +272,27 @@
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
                 <div>
-                    <div class="flex items-center gap-2 text-accent-500 font-bold text-xs uppercase tracking-wider mb-2">
+                    <div class="flex items-center gap-2 text-accent-500 font-bold text-xs uppercase tracking-wider mb-2 print-hidden">
                         <span class="w-7 h-7 rounded-lg bg-accent-500/10 flex items-center justify-center text-sm font-extrabold border border-accent-500/20">4</span>
                         Étape 4 &bull; Palmarès
                     </div>
                     <h2 class="text-2xl font-bold text-white">Classement Général des Équipes</h2>
-                    <p class="text-slate-400 text-sm">Attribution des points en direct (incrémente les matchs joués), ajustement des matchs/points et cumul du classement.</p>
+                    <p class="text-slate-400 text-sm print-hidden">Attribution des points en direct (incrémente les matchs joués), ajustement des matchs/points et cumul du classement.</p>
                 </div>
                 
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                    <button onclick="reinitialiserTotalPoints()" class="touch-btn-sm bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-300 font-semibold px-4 rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 text-xs shrink-0" title="Remettre le compteur de points de toutes les équipes à zéro">
+                    <!-- Bouton pour imprimer le classement général -->
+                    <button onclick="window.print()" class="touch-btn-sm bg-pitch-600 hover:bg-pitch-500 text-white font-bold px-4 rounded-xl shadow-lg shadow-pitch-600/30 transition flex items-center justify-center gap-2 text-xs shrink-0 print-hidden" title="Imprimer le classement général des équipes">
+                        <i class="fa-solid fa-print"></i>
+                        <span>Imprimer le classement</span>
+                    </button>
+
+                    <button onclick="reinitialiserTotalPoints()" class="touch-btn-sm bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-300 font-semibold px-4 rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 text-xs shrink-0 print-hidden" title="Remettre le compteur de points de toutes les équipes à zéro">
                         <i class="fa-solid fa-rotate text-red-400"></i>
                         <span>Réinit. Total Points</span>
                     </button>
 
-                    <div class="relative w-full sm:w-72">
+                    <div class="relative w-full sm:w-72 print-hidden">
                         <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
                         <input type="text" id="leaderboard-filter" oninput="renderLeaderboard()" placeholder="Filtrer une équipe..." class="w-full h-12 bg-slate-950 text-slate-200 text-sm rounded-xl pl-11 pr-4 border border-slate-800 focus:outline-none focus:border-pitch-500">
                     </div>
@@ -271,8 +307,8 @@
                             <th class="py-4 px-4">Équipe</th>
                             <th class="py-4 px-4">Matchs Joués</th>
                             <th class="py-4 px-4">Effectif</th>
-                            <th class="py-4 px-4 text-center">Attribution Points (+1 Match Joué)</th>
-                            <th class="py-4 px-4 text-center">Ajuster (Matchs & Points)</th>
+                            <th class="py-4 px-4 text-center print-hidden">Attribution Points (+1 Match Joué)</th>
+                            <th class="py-4 px-4 text-center print-hidden">Ajuster (Matchs & Points)</th>
                             <th class="py-4 px-4 text-right rounded-r-xl">Total Points</th>
                         </tr>
                     </thead>
@@ -288,7 +324,7 @@
     </main>
 
     <!-- Modal d'ajustement Matchs & Points -->
-    <div id="adjust-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div id="adjust-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 print-hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center text-xl">
                 <i class="fa-solid fa-sliders"></i>
@@ -315,7 +351,7 @@
     </div>
 
     <!-- Modal confirmation pour reset -->
-    <div id="reset-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div id="reset-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 print-hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div class="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 flex items-center justify-center text-xl">
                 <i class="fa-solid fa-triangle-exclamation"></i>
@@ -330,7 +366,7 @@
     </div>
 
     <!-- Toast Notification Banner -->
-    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 max-w-md bg-slate-900 text-white border border-slate-700 px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-4">
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 max-w-md bg-slate-900 text-white border border-slate-700 px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-4 print-hidden">
         <i id="toast-icon" class="fa-solid fa-circle-info text-pitch-500 text-xl"></i>
         <span id="toast-message" class="text-sm font-semibold">Notification</span>
     </div>
@@ -1007,8 +1043,8 @@
                         <td class="py-4 px-4 text-slate-300 text-sm font-semibold">${t.playCount} match(s)</td>
                         <td class="py-4 px-4 text-slate-400 text-sm font-medium">${t.playerCount} joueur(s)</td>
                         
-                        <!-- Attribution directe points + 1 match joué -->
-                        <td class="py-4 px-4 text-center">
+                        <!-- Attribution directe points + 1 match joué (masqué à l'impression) -->
+                        <td class="py-4 px-4 text-center print-hidden">
                             <div class="inline-flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
                                 <button onclick="attribuerPointsResultat(${t.id}, 3)" title="Victoire (+3 pts, +1 match)" class="touch-btn-sm bg-pitch-600/30 hover:bg-pitch-600 text-pitch-400 hover:text-white text-xs font-bold px-2.5 rounded-lg border border-pitch-500/30 transition">
                                     +3
@@ -1022,8 +1058,8 @@
                             </div>
                         </td>
 
-                        <!-- Bouton d'Ajustement des matchs et points -->
-                        <td class="py-4 px-4 text-center">
+                        <!-- Bouton d'Ajustement des matchs et points (masqué à l'impression) -->
+                        <td class="py-4 px-4 text-center print-hidden">
                             <button onclick="ajusterMatchsEtPoints(${t.id})" title="Ajuster les matchs joués et les points" class="touch-btn-sm bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-700 transition inline-flex items-center gap-2">
                                 <i class="fa-solid fa-sliders text-amber-400 text-xs"></i>
                                 <span>Ajuster</span>
