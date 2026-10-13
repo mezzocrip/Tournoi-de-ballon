@@ -177,23 +177,13 @@
                         Étape 2 &bull; Session de Jeu
                     </div>
                     <h2 class="text-2xl font-bold text-white">Sélection des Équipes pour le Match</h2>
-                    <p class="text-slate-400 text-sm">Cochez les équipes qui doivent jouer. Un compteur enregistre le nombre de matchs joués par chaque équipe.</p>
+                    <p class="text-slate-400 text-sm">Cochez les équipes pour les faire apparaître directement sur le terrain.</p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
-                    <button onclick="validerSelectionMatch()" class="touch-btn bg-gradient-to-r from-pitch-600 to-pitch-500 hover:from-pitch-500 hover:to-pitch-600 active:scale-[0.98] text-white font-bold px-6 rounded-xl shadow-xl shadow-pitch-600/30 transition flex items-center gap-3">
-                        <i class="fa-solid fa-check-double text-xl"></i>
-                        <span class="text-base">Valider & Faire Jouer les Sélectionnées</span>
-                    </button>
-
                     <button onclick="reinitialiserEquipesTerrain()" class="touch-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-300 font-semibold px-4 rounded-xl border border-slate-700 transition flex items-center gap-2 text-sm" title="Vider les équipes actuellement sur le terrain">
                         <i class="fa-solid fa-xmark text-red-400"></i>
                         <span>Réinit. Terrain</span>
-                    </button>
-
-                    <button onclick="reinitialiserCompteursJoues()" class="touch-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-300 font-semibold px-4 rounded-xl border border-slate-700 transition flex items-center gap-2 text-sm" title="Remettre à zéro tous les compteurs de matchs">
-                        <i class="fa-solid fa-rotate-right text-amber-400"></i>
-                        <span>Réinit. Compteurs Joués</span>
                     </button>
                 </div>
             </div>
@@ -209,7 +199,7 @@
                             <i class="fa-solid fa-shield-halved text-2xl"></i>
                         </div>
                         <p class="text-slate-300 font-semibold text-base">Aucune équipe sur le terrain.</p>
-                        <p class="text-xs text-slate-500 mt-1">Cochez les équipes dans la liste ci-dessous puis cliquez sur "Valider & Faire Jouer".</p>
+                        <p class="text-xs text-slate-500 mt-1">Cochez les équipes dans la liste ci-dessous pour les afficher instantanément sur le terrain.</p>
                     </div>
                 </div>
             </div>
@@ -346,9 +336,8 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'FOOTBALL_TOURNAMENT_APP_DATA_V3';
+        const STORAGE_KEY = 'FOOTBALL_TOURNAMENT_APP_DATA_V4';
 
-        // Structure d'une équipe: { id, name, playCount: 0, checked: false, points: 0 }
         let players = [];      // { id, name, teamId }
         let teams = [];        // { id, name, playCount, checked, points }
         let currentPlayingTeamIds = []; 
@@ -398,7 +387,7 @@
         function sauvegarderAutomatiquement() {
             try {
                 const payload = {
-                    version: 3,
+                    version: 4,
                     timestamp: new Date().toISOString(),
                     players: players,
                     teams: teams,
@@ -424,7 +413,7 @@
                             checked: !!t.checked,
                             points: t.points || 0
                         }));
-                        currentPlayingTeamIds = parsed.currentPlayingTeamIds || [];
+                        currentPlayingTeamIds = teams.filter(t => t.checked).map(t => t.id);
                         return true;
                     }
                 }
@@ -481,7 +470,7 @@
                             checked: !!t.checked,
                             points: t.points || 0
                         }));
-                        currentPlayingTeamIds = parsed.currentPlayingTeamIds || [];
+                        currentPlayingTeamIds = teams.filter(t => t.checked).map(t => t.id);
                         
                         sauvegarderAutomatiquement();
                         renderAll();
@@ -600,36 +589,22 @@
         }
 
         // ==========================================
-        // GESTION MANUELLE & COMPTEUR DE MATCHS
+        // GESTION MANUELLE & TERRAIN EN DIRECT
         // ==========================================
 
         function toggleTeamSelection(teamId) {
             const team = teams.find(t => t.id === teamId);
             if (team) {
                 team.checked = !team.checked;
+                currentPlayingTeamIds = teams.filter(t => t.checked).map(t => t.id);
                 sauvegarderAutomatiquement();
-                renderSelectionGrid();
+                renderAll();
+                if (team.checked) {
+                    showToast(`${team.name} est entrée sur le terrain.`, "success");
+                } else {
+                    showToast(`${team.name} a quitté le terrain.`, "info");
+                }
             }
-        }
-
-        function validerSelectionMatch() {
-            const selectedTeams = teams.filter(t => t.checked);
-            
-            if (selectedTeams.length === 0) {
-                showToast("Veuillez cocher au moins une équipe à faire jouer.", "warning");
-                return;
-            }
-
-            // Incrémenter le compteur de sélection des équipes cochées
-            selectedTeams.forEach(t => {
-                t.playCount = (t.playCount || 0) + 1;
-            });
-
-            currentPlayingTeamIds = selectedTeams.map(t => t.id);
-
-            sauvegarderAutomatiquement();
-            renderAll();
-            showToast(`${selectedTeams.length} équipe(s) envoyée(s) sur le terrain (+1 match au compteur) !`, "success");
         }
 
         function reinitialiserEquipesTerrain() {
@@ -638,13 +613,6 @@
             sauvegarderAutomatiquement();
             renderAll();
             showToast("Le terrain et la sélection ont été réinitialisés.", "info");
-        }
-
-        function reinitialiserCompteursJoues() {
-            teams.forEach(t => t.playCount = 0);
-            sauvegarderAutomatiquement();
-            renderAll();
-            showToast("Tous les compteurs de matchs ont été réinitialisés à 0.", "info");
         }
 
         function reinitialiserTotalPoints() {
@@ -760,7 +728,7 @@
             const team = teams.find(t => t.id === teamId);
             if (team) {
                 team.points = (team.points || 0) + pts;
-                team.playCount = (team.playCount || 0) + 1; // Incrémente également les matchs joués
+                team.playCount = (team.playCount || 0) + 1; // Incrémente les matchs joués lors du résultat
                 sauvegarderAutomatiquement();
                 renderAll();
                 showToast(`${pts >= 0 ? '+' + pts : pts} pt(s) attribué(s) à ${team.name} (+1 match joué) !`, "success");
@@ -854,7 +822,7 @@
                             <input type="checkbox" ${team.checked ? 'checked' : ''} class="w-5 h-5 rounded border-slate-700 text-pitch-600 focus:ring-pitch-500 pointer-events-none">
                             <span class="font-bold text-sm text-slate-200 truncate">${team.name}</span>
                         </div>
-                        <span class="text-xs px-2.5 py-1 rounded-lg border ${badgeColor} shrink-0 flex items-center gap-1" title="${count === 0 ? 'N\'a pas encore joué !' : 'Nombre de fois sélectionnée'}">
+                        <span class="text-xs px-2.5 py-1 rounded-lg border ${badgeColor} shrink-0 flex items-center gap-1" title="${count === 0 ? 'N\'a pas encore joué !' : 'Nombre de matchs joués'}">
                             <i class="fa-solid fa-gamepad text-[10px]"></i>
                             ${count === 0 ? 'Jamais joué' : count + ' match(s)'}
                         </span>
@@ -874,7 +842,7 @@
                             <i class="fa-solid fa-shield-halved text-2xl"></i>
                         </div>
                         <p class="text-slate-300 font-semibold text-base">Aucune équipe sur le terrain.</p>
-                        <p class="text-xs text-slate-500 mt-1">Cochez les équipes dans la liste ci-dessous puis cliquez sur "Valider & Faire Jouer".</p>
+                        <p class="text-xs text-slate-500 mt-1">Cochez les équipes dans la liste ci-dessous pour les afficher instantanément sur le terrain.</p>
                     </div>
                 `;
                 return;
